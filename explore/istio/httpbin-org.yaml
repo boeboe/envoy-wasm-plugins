@@ -1,0 +1,49 @@
+---
+apiVersion: networking.istio.io/v1beta1
+kind: Gateway
+metadata:
+  name: wasm-httpbin-gateway
+spec:
+  selector:
+    istio: ingressgateway
+  servers:
+    - hosts:
+        - wasm.httpbin.org
+      port:
+        name: http-wasm-httpbin
+        number: 80
+        protocol: HTTP
+---
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: wasm-httpbin-vs
+spec:
+  gateways:
+    - wasm-httpbin-gateway
+  hosts:
+    - wasm.httpbin.org
+  http:
+    - name: "httpbin-org-routes"
+      match:
+        - uri:
+            prefix: /
+      route:
+        - destination:
+            host: httpbin.org
+            port:
+              number: 80
+---
+apiVersion: networking.istio.io/v1beta1
+kind: ServiceEntry
+metadata:
+  name: httpbin-se
+spec:
+  hosts:
+    - httpbin.org
+  location: MESH_EXTERNAL
+  ports:
+    - name: http-httpbin
+      number: 80
+      protocol: HTTP
+  resolution: DNS

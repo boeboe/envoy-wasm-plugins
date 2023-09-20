@@ -1,0 +1,69 @@
+---
+apiVersion: networking.istio.io/v1beta1
+kind: Gateway
+metadata:
+  name: wasm-tetrate-gateway
+spec:
+  selector:
+    istio: ingressgateway
+  servers:
+    - hosts:
+        - wasm.tetrate.io
+      port:
+        name: http-wasm-tetrate
+        number: 80
+        protocol: HTTP
+---
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: wasm-tetrate-vs
+spec:
+  gateways:
+    - wasm-tetrate-gateway
+  hosts:
+    - wasm.tetrate.io
+  http:
+    - name: "tetrate-io-routes"
+      match:
+        - uri:
+            prefix: /
+      rewrite:
+        authority: tetrate.io
+      route:
+        - destination:
+            host: tetrate.io
+            port: 
+              number: 80
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: ServiceEntry
+metadata:
+  name: tetrate-se
+spec:
+  hosts:
+  - tetrate.io
+  location: MESH_EXTERNAL
+  ports:
+  - number: 80
+    name: http-tetrate
+    protocol: HTTP
+    targetPort: 443
+  - number: 443
+    name: https-tetrate
+    protocol: HTTPS
+  resolution: DNS
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule
+metadata:
+  name: tetrate-dr
+spec:
+  host: tetrate.io
+  trafficPolicy:
+    portLevelSettings:
+    - port:
+        number: 80
+      tls:
+        mode: SIMPLE
+
