@@ -62,7 +62,7 @@ func (ctx *httpContext) OnHttpResponseHeaders(numHeaders int, endOfStream bool) 
 	return types.ActionContinue
 }
 
-// Helper function to explore wasm properties
+// Helper function to print-properties wasm properties
 // https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/advanced/attributes
 func PrintWasmProperties() {
 

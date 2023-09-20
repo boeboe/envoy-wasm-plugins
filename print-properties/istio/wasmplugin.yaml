@@ -2,7 +2,7 @@
 apiVersion: extensions.istio.io/v1alpha1
 kind: WasmPlugin
 metadata:
-  name: explore
+  name: print-properties
   namespace: istio-ingress
 spec:
   imagePullPolicy: Always
@@ -10,4 +10,4 @@ spec:
   selector:
     matchLabels:
       istio: ingressgateway
-  url: oci://docker.io/boeboe/envoy-wasm-plugins:explore-0.1
+  url: oci://docker.io/boeboe/envoy-wasm-plugins:print-properties-0.1

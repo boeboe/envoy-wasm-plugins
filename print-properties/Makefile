@@ -20,7 +20,7 @@ NAME := envoy-wasm-plugins
 WASM := $(NAME).wasm
 
 OUT := $(WASM)
-TAG ?= explore-0.1
+TAG ?= print-properties-0.1
 HUB ?= docker.io/boeboe
 
 LINTER := github.com/golangci/golangci-lint/cmd/golangci-lint@v1.50.0
