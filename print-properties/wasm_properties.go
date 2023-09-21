@@ -130,6 +130,7 @@ type nodeMetadata struct {
 	annotations         string
 	clusterId           string
 	envoyPrometheusPort int
+	envoyStatusPort     int
 	instanceIps         string
 	istioProxySha       string
 	istioVersion        string
@@ -160,6 +161,7 @@ func getNodeMetadata() nodeMetadata {
 	result.annotations = getStringValueFromMap(nodeMetadataMap, "ANNOTATIONS")
 	result.clusterId = getStringValueFromMap(nodeMetadataMap, "CLUSTER_ID")
 	result.envoyPrometheusPort = getIntValueFromMap(nodeMetadataMap, "ENVOY_PROMETHEUS_PORT")
+	result.envoyStatusPort = getIntValueFromMap(nodeMetadataMap, "ENVOY_STATUS_PORT")
 	result.instanceIps = getStringValueFromMap(nodeMetadataMap, "INSTANCE_IPS")
 	result.istioProxySha = getStringValueFromMap(nodeMetadataMap, "ISTIO_PROXY_SHA")
 	result.istioVersion = getStringValueFromMap(nodeMetadataMap, "ISTIO_VERSION")
