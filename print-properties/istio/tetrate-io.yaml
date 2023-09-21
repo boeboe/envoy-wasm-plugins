@@ -5,7 +5,7 @@ metadata:
   name: wasm-tetrate-gateway
 spec:
   selector:
-    istio: ingressgateway
+    istio: ingress
   servers:
     - hosts:
         - wasm.tetrate.io

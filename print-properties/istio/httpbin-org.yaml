@@ -5,7 +5,7 @@ metadata:
   name: wasm-httpbin-gateway
 spec:
   selector:
-    istio: ingressgateway
+    istio: ingress
   servers:
     - hosts:
         - wasm.httpbin.org

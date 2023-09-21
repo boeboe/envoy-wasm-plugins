@@ -9,5 +9,5 @@ spec:
   phase: AUTHN
   selector:
     matchLabels:
-      istio: ingressgateway
+      istio: ingress
   url: oci://docker.io/boeboe/envoy-wasm-plugins:print-properties-0.1

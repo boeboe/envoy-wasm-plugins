@@ -53,15 +53,15 @@ deploy:
 	kubectl apply -f istio/tetrate-io.yaml
 
 dump-config:
-	kubectl exec $$(kubectl get pods -n istio-ingress -o custom-columns=:metadata.name -l istio=ingressgateway) -n istio-ingress -- pilot-agent request GET config_dump > config_dump-$$(date "+%Y.%m.%d-%H.%M.%S").json
+	kubectl exec $$(kubectl get pods -n istio-ingress -o custom-columns=:metadata.name -l istio=ingress) -n istio-ingress -- pilot-agent request GET config_dump > ingress_config_dump-$$(date "+%Y.%m.%d-%H.%M.%S").json
 
 dump-logs:
-	kubectl -n istio-ingress logs $$(kubectl get pods -n istio-ingress -o custom-columns=:metadata.name -l istio=ingressgateway)
+	kubectl -n istio-ingress logs $$(kubectl get pods -n istio-ingress -o custom-columns=:metadata.name -l istio=ingress) > ingress_logs-$$(date "+%Y.%m.%d-%H.%M.%S").log
 
 enable-wasm-debug:
-	istioctl pc log $$(kubectl get pods -n istio-ingress -o custom-columns=:metadata.name -l istio=ingressgateway).istio-ingress --level wasm:debug
+	istioctl pc log $$(kubectl get pods -n istio-ingress -o custom-columns=:metadata.name -l istio=ingress).istio-ingress --level wasm:debug
 
 curl:
-	echo curl -v -H \"X-B3-Sampled: 1\" --resolve \"wasm.httpbin.org:80:$$(kubectl get services --namespace istio-ingress istio-ingressgateway --output jsonpath='{.status.loadBalancer.ingress[0].ip}')\" \"http://wasm.httpbin.org/headers\"
-	echo curl -v -H \"X-B3-Sampled: 1\" --resolve \"wasm.tetrate.io:80:$$(kubectl get services --namespace istio-ingress istio-ingressgateway --output jsonpath='{.status.loadBalancer.ingress[0].ip}')\" \"http://wasm.tetrate.io/\"
+	echo curl -v -H \"X-B3-Sampled: 1\" --resolve \"wasm.httpbin.org:80:$$(kubectl get services --namespace istio-ingress istio-ingress --output jsonpath='{.status.loadBalancer.ingress[0].ip}')\" \"http://wasm.httpbin.org/headers\"
+	echo curl -v -H \"X-B3-Sampled: 1\" --resolve \"wasm.tetrate.io:80:$$(kubectl get services --namespace istio-ingress istio-ingress --output jsonpath='{.status.loadBalancer.ingress[0].ip}')\" \"http://wasm.tetrate.io/\"
 	
