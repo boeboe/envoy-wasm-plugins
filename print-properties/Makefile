@@ -51,6 +51,7 @@ deploy:
 	kubectl apply -f istio/wasmplugin.yaml
 	kubectl apply -f istio/httpbin-org.yaml
 	kubectl apply -f istio/tetrate-io.yaml
+	kubectl delete pod $$(kubectl get pods -n istio-ingress -o custom-columns=:metadata.name -l istio=ingress) -n istio-ingress
 
 dump-config:
 	kubectl exec $$(kubectl get pods -n istio-ingress -o custom-columns=:metadata.name -l istio=ingress) -n istio-ingress -- pilot-agent request GET config_dump > ingress_config_dump-$$(date "+%Y.%m.%d-%H.%M.%S").json

@@ -31,6 +31,7 @@ func getPluginRootId() string {
 }
 
 // Get plugin vm id
+//
 // TODO: this seems to be always empty?
 func getPluginVmId() string {
 	pluginVmId, err := proxywasm.GetProperty([]string{"plugin_vm_id"})
@@ -42,6 +43,7 @@ func getPluginVmId() string {
 }
 
 // Get upstream cluster name
+//
 // Example value: "outbound|80||httpbin.org"
 func getClusterName() string {
 	clusterName, err := proxywasm.GetProperty([]string{"cluster_name"})
@@ -97,11 +99,13 @@ func getListenerDirection() trafficDirection {
 		return 0
 	}
 
-	return trafficDirection(binary.LittleEndian.Uint64(listenerDirection))
+	return trafficDirection(binary.LittleEndian.Uint32(listenerDirection))
 }
 
-// get node id, an opaque node identiefier for the envoy node. it also provides the local
+// Get node id, an opaque node identifier for the envoy node. It also provides the local
 // service node name
+//
+// Example value: router~10.244.0.22~istio-ingress-6d78c67d85-qsbtz.istio-ingress~istio-ingress.svc.cluster.local
 func getNodeId() string {
 	nodeId, err := proxywasm.GetProperty([]string{"node", "id"})
 	if err != nil {
@@ -110,7 +114,9 @@ func getNodeId() string {
 	return string(nodeId)
 }
 
-// get node cluster, which defines the local service cluster name where envoy is running
+// Get node cluster, which defines the local service cluster name where envoy is running
+//
+// Example value: istio-ingress.istio-ingress
 func getNodeCluster() string {
 	nodeCluster, err := proxywasm.GetProperty([]string{"node", "cluster"})
 	if err != nil {
@@ -140,7 +146,7 @@ type nodeMetadata struct {
 	workloadName        string
 }
 
-// get node metadata, extending the node identifier
+// Get node metadata, extending the node identifier
 func getNodeMetadata() nodeMetadata {
 	result := nodeMetadata{}
 
