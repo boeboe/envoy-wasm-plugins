@@ -62,7 +62,6 @@ enable-wasm-debug:
 	istioctl pc log $$(kubectl get pods -n istio-ingress -o custom-columns=:metadata.name -l istio=ingressgateway).istio-ingress --level wasm:debug
 
 curl:
-	ingress_ip=$$(kubectl get services --namespace istio-ingress istio-ingressgateway --output jsonpath='{.status.loadBalancer.ingress[0].ip}')
-	echo curl -v -H \"X-B3-Sampled: 1\" --resolve \"wasm.httpbin.org:80:$${ingress_ip}\" \"http://wasm.httpbin.org/headers\"
-	echo curl -v -H \"X-B3-Sampled: 1\" --resolve \"wasm.tetrate.io:80:$${ingress_ip}\" \"http://wasm.tetrate.io/\"
+	echo curl -v -H \"X-B3-Sampled: 1\" --resolve \"wasm.httpbin.org:80:$$(kubectl get services --namespace istio-ingress istio-ingressgateway --output jsonpath='{.status.loadBalancer.ingress[0].ip}')\" \"http://wasm.httpbin.org/headers\"
+	echo curl -v -H \"X-B3-Sampled: 1\" --resolve \"wasm.tetrate.io:80:$$(kubectl get services --namespace istio-ingress istio-ingressgateway --output jsonpath='{.status.loadBalancer.ingress[0].ip}')\" \"http://wasm.tetrate.io/\"
 	
