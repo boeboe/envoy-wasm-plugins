@@ -3,12 +3,13 @@
 package main
 
 import (
-	"strconv"
+	"encoding/binary"
 
 	"github.com/tetratelabs/proxy-wasm-go-sdk/proxywasm"
 )
 
 // Get plugin name
+// This matches <metadata.name>.<metadata.namespace> in the istio WasmPlugin CR
 func getPluginName() string {
 	pluginName, err := proxywasm.GetProperty([]string{"plugin_name"})
 	if err != nil {
@@ -19,6 +20,7 @@ func getPluginName() string {
 }
 
 // Get plugin root id
+// This matches the <spec.pluginName> in the istio WasmPlugin CR
 func getPluginRootId() string {
 	pluginRootId, err := proxywasm.GetProperty([]string{"plugin_root_id"})
 	if err != nil {
@@ -29,6 +31,7 @@ func getPluginRootId() string {
 }
 
 // Get plugin vm id
+// TODO: this seems to be always empty?
 func getPluginVmId() string {
 	pluginVmId, err := proxywasm.GetProperty([]string{"plugin_vm_id"})
 	if err != nil {
@@ -39,6 +42,7 @@ func getPluginVmId() string {
 }
 
 // Get upstream cluster name
+// Example value: "outbound|80||httpbin.org"
 func getClusterName() string {
 	clusterName, err := proxywasm.GetProperty([]string{"cluster_name"})
 	if err != nil {
@@ -48,7 +52,8 @@ func getClusterName() string {
 	return string(clusterName)
 }
 
-// Get route name
+// Get route name (only available in the response path)
+// This matches the <spec.http.name> in the istio VirtualService CR
 func getRouteName() string {
 	routeName, err := proxywasm.GetProperty([]string{"route_name"})
 	if err != nil {
@@ -58,25 +63,41 @@ func getRouteName() string {
 	return string(routeName)
 }
 
-// Get listener direction
+type trafficDirection int
+
+const (
+	Unspecified trafficDirection = iota
+	Inbound
+	Outbound
+)
+
+func (t trafficDirection) String() string {
+	switch t {
+	case Unspecified:
+		return "UNSPECIFIED"
+	case Inbound:
+		return "INBOUND"
+	case Outbound:
+		return "OUTBOUND"
+	}
+	return "UNKNOWN"
+}
+
+// Get listener direction (enum value)
+// https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/core/v3/base.proto#enum-config-core-v3-trafficdirection
+//
 // Possible values are:
 //   - UNSPECIFIED: 0
 //   - INBOUND: 1
 //   - OUTBOUND: 2
-func getListenerDirection() int {
-	listenerDirectionString, err := proxywasm.GetProperty([]string{"listener_direction"})
+func getListenerDirection() trafficDirection {
+	listenerDirection, err := proxywasm.GetProperty([]string{"listener_direction"})
 	if err != nil {
 		proxywasm.LogWarnf("error reading wasm attribute listener_direction: %v", err)
 		return 0
 	}
 
-	listenerDirection, err := strconv.Atoi(string(listenerDirectionString))
-	if err != nil {
-		proxywasm.LogWarnf("error converting wasm attribute listener_direction to integer: %v", err)
-		return 0
-	}
-
-	return listenerDirection
+	return trafficDirection(binary.LittleEndian.Uint64(listenerDirection))
 }
 
 // get node id, an opaque node identiefier for the envoy node. it also provides the local
@@ -119,73 +140,34 @@ type nodeMetadata struct {
 	workloadName        string
 }
 
-func getWasmNodeMetadataStringProperty(nodeProperties [][2]string, propertyName string) string {
-	for _, value := range nodeProperties {
-		if value[0] == propertyName {
-			return string(value[1])
-		}
-	}
-	proxywasm.LogWarnf("unable to find map key '%v' in node.metadata: %v", propertyName, nodeProperties)
-	return ""
-}
-
-func getWasmNodeMetadataIntProperty(nodeProperties [][2]string, propertyName string) int {
-	for _, value := range nodeProperties {
-		if value[0] == propertyName {
-			intValue, err := strconv.Atoi(string(value[1]))
-			if err != nil {
-				proxywasm.LogWarnf("error converting wasm attribute node.metadata with map key '%v' to integer: %v", value[0], err)
-				return 0
-			}
-			return intValue
-		}
-	}
-	proxywasm.LogWarnf("unable to find map key '%v' in wasm attribute node.metadata: %v", propertyName, nodeProperties)
-	return 0
-}
-
-func getWasmNodeMetadataBoolProperty(nodeProperties [][2]string, propertyName string) bool {
-	for _, value := range nodeProperties {
-		if value[0] == propertyName {
-			boolValue, err := strconv.ParseBool(string(value[1]))
-			if err != nil {
-				proxywasm.LogWarnf("error converting wasm attribute node.metadata with map key '%v' to bool: %v", value[0], err)
-				return false
-			}
-			return boolValue
-		}
-	}
-	proxywasm.LogWarnf("unable to find map key '%v' in wasm attribute node.metadata: %v", propertyName, nodeProperties)
-	return false
-}
-
 // get node metadata, extending the node identifier
 func getNodeMetadata() nodeMetadata {
 	result := nodeMetadata{}
 
-	nodeMetadataMap, err := proxywasm.GetPropertyMap([]string{"node", "metadata"})
+	nodeMetadataArray, err := proxywasm.GetPropertyMap([]string{"node", "metadata"})
 	if err != nil {
 		proxywasm.LogWarnf("error reading node.metadata: %v", err)
 		return result
 	}
+	nodeMetadataMap := tupletArrayToMap(nodeMetadataArray)
 
-	result.annotations = getWasmNodeMetadataStringProperty(nodeMetadataMap, "ANNOTATIONS")
-	result.clusterId = getWasmNodeMetadataStringProperty(nodeMetadataMap, "CLUSTER_ID")
-	result.envoyPrometheusPort = getWasmNodeMetadataIntProperty(nodeMetadataMap, "ENVOY_PROMETHEUS_PORT")
-	result.instanceIps = getWasmNodeMetadataStringProperty(nodeMetadataMap, "INSTANCE_IPS")
-	result.istioProxySha = getWasmNodeMetadataStringProperty(nodeMetadataMap, "ISTIO_PROXY_SHA")
-	result.istioVersion = getWasmNodeMetadataStringProperty(nodeMetadataMap, "ISTIO_VERSION")
-	result.labels = getWasmNodeMetadataStringProperty(nodeMetadataMap, "LABELS")
-	result.meshId = getWasmNodeMetadataStringProperty(nodeMetadataMap, "MESH_ID")
-	result.name = getWasmNodeMetadataStringProperty(nodeMetadataMap, "NAME")
-	result.namespace = getWasmNodeMetadataStringProperty(nodeMetadataMap, "NAMESPACE")
-	result.nodeName = getWasmNodeMetadataStringProperty(nodeMetadataMap, "NODE_NAME")
-	result.owner = getWasmNodeMetadataStringProperty(nodeMetadataMap, "OWNER")
-	result.pilotSan = getWasmNodeMetadataStringProperty(nodeMetadataMap, "PILOT_SAN")
-	result.proxyConfig = getWasmNodeMetadataStringProperty(nodeMetadataMap, "PROXY_CONFIG")
-	result.serviceAccount = getWasmNodeMetadataStringProperty(nodeMetadataMap, "SERVICE_ACCOUNT")
-	result.unprivilegedPod = getWasmNodeMetadataBoolProperty(nodeMetadataMap, "UNPRIVILEGED_POD")
-	result.workloadName = getWasmNodeMetadataStringProperty(nodeMetadataMap, "WORKLOAD_NAME")
+	result.annotations = getStringValueFromMap(nodeMetadataMap, "ANNOTATIONS")
+	result.clusterId = getStringValueFromMap(nodeMetadataMap, "CLUSTER_ID")
+	result.envoyPrometheusPort = getIntValueFromMap(nodeMetadataMap, "ENVOY_PROMETHEUS_PORT")
+	result.instanceIps = getStringValueFromMap(nodeMetadataMap, "INSTANCE_IPS")
+	result.istioProxySha = getStringValueFromMap(nodeMetadataMap, "ISTIO_PROXY_SHA")
+	result.istioVersion = getStringValueFromMap(nodeMetadataMap, "ISTIO_VERSION")
+	result.labels = getStringValueFromMap(nodeMetadataMap, "LABELS")
+	result.meshId = getStringValueFromMap(nodeMetadataMap, "MESH_ID")
+	result.name = getStringValueFromMap(nodeMetadataMap, "NAME")
+	result.namespace = getStringValueFromMap(nodeMetadataMap, "NAMESPACE")
+	result.nodeName = getStringValueFromMap(nodeMetadataMap, "NODE_NAME")
+	result.owner = getStringValueFromMap(nodeMetadataMap, "OWNER")
+	result.pilotSan = getStringValueFromMap(nodeMetadataMap, "PILOT_SAN")
+	result.proxyConfig = getStringValueFromMap(nodeMetadataMap, "PROXY_CONFIG")
+	result.serviceAccount = getStringValueFromMap(nodeMetadataMap, "SERVICE_ACCOUNT")
+	result.unprivilegedPod = getBoolValueFromMap(nodeMetadataMap, "UNPRIVILEGED_POD")
+	result.workloadName = getStringValueFromMap(nodeMetadataMap, "WORKLOAD_NAME")
 
 	return result
 }

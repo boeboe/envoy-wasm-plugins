@@ -7,7 +7,16 @@ metadata:
 spec:
   imagePullPolicy: Always
   phase: AUTHN
+  pluginConfig:
+    test_plugin_config_var: test_plugin_config_value
+  pluginName: demo-print-properties
   selector:
     matchLabels:
       istio: ingress
   url: oci://docker.io/boeboe/envoy-wasm-plugins:print-properties-0.1
+  vmConfig:
+    env:
+      - name: POD_NAME
+        valueFrom: HOST
+      - name: TEST_ENV_VAR
+        value: testEnvValue

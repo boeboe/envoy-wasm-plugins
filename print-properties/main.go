@@ -55,7 +55,7 @@ func (ctx *httpContext) OnHttpRequestHeaders(numHeaders int, endOfStream bool) t
 
 func (ctx *httpContext) OnHttpResponseHeaders(numHeaders int, endOfStream bool) types.Action {
 	proxywasm.LogInfo("********** OnHttpResponseHeaders **********")
-	// printWasmProperties()
+	printWasmProperties()
 
 	return types.ActionContinue
 }
