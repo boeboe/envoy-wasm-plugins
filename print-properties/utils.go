@@ -22,7 +22,7 @@ func getStringValueFromMap(inMap map[string]string, key string) string {
 	if outString, ok := inMap[key]; ok {
 		return outString
 	}
-	proxywasm.LogWarnf("map '%v' does not contain key '%v'\n", inMap, key)
+	proxywasm.LogDebugf("map '%v' does not contain key '%v'\n", inMap, key)
 	return ""
 }
 
@@ -31,7 +31,7 @@ func getIntValueFromMap(inMap map[string]string, key string) int {
 	if outString, ok := inMap[key]; ok {
 		return int(float64fromByteArray([]byte(outString)))
 	}
-	proxywasm.LogWarnf("map '%v' does not contain key '%v'\n", inMap, key)
+	proxywasm.LogDebugf("map '%v' does not contain key '%v'\n", inMap, key)
 	return 0
 }
 
@@ -45,7 +45,7 @@ func getBoolValueFromMap(inMap map[string]string, key string) bool {
 		}
 		return outBool
 	}
-	proxywasm.LogWarnf("map '%v' does not contain key '%v'\n", inMap, key)
+	proxywasm.LogDebugf("map '%v' does not contain key '%v'\n", inMap, key)
 	return false
 }
 
