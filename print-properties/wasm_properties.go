@@ -1,4 +1,4 @@
-// Helper function to print-properties wasm properties
+// Helper function to retreive wasm properties
 // https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/advanced/attributes#wasm-attributes
 package main
 
@@ -397,34 +397,18 @@ func getNodeListeningAddresses() string {
 	return nodeListeningAddresses
 }
 
-func getClusterMetadata() string {
-	clusterMetadata, err := getPropertyString([]string{"node", "cluster_metadata"})
-	if err != nil {
-		proxywasm.LogWarnf("error reading node.cluster_metadata: %v", err)
-	}
-	return clusterMetadata
+func getClusterMetadata() istioFilterMetadata {
+	return getIstioFilterMetadata([]string{"node", "cluster_metadata", "filter_metadata", "istio"})
 }
 
-func getListenerMetadata() string {
-	listenerMetadata, err := getPropertyString([]string{"node", "listener_metadata"})
-	if err != nil {
-		proxywasm.LogWarnf("error reading node.listener_metadata: %v", err)
-	}
-	return listenerMetadata
+func getListenerMetadata() istioFilterMetadata {
+	return getIstioFilterMetadata([]string{"node", "listener_metadata", "filter_metadata", "istio"})
 }
 
-func getRouteMetadata() string {
-	routeMetadata, err := getPropertyString([]string{"node", "route_metadata"})
-	if err != nil {
-		proxywasm.LogWarnf("error reading node.route_metadata: %v", err)
-	}
-	return routeMetadata
+func getRouteMetadata() istioFilterMetadata {
+	return getIstioFilterMetadata([]string{"node", "route_metadata", "filter_metadata", "istio"})
 }
 
-func getUpstreamHostMetadata() string {
-	upstreamHostMetadata, err := getPropertyString([]string{"node", "upstream_host_metadata"})
-	if err != nil {
-		proxywasm.LogWarnf("error reading node.upstream_host_metadata: %v", err)
-	}
-	return upstreamHostMetadata
+func getUpstreamHostMetadata() istioFilterMetadata {
+	return getIstioFilterMetadata([]string{"node", "upstream_host_metadata", "filter_metadata", "istio"})
 }
