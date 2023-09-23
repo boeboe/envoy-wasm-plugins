@@ -51,6 +51,7 @@ func (ctx *httpContext) OnHttpRequestHeaders(numHeaders int, endOfStream bool) t
 	printWasmProperties()
 	printConfigurationProperties()
 	printUpstreamProperties()
+	printConnectionProperties()
 
 	return types.ActionContinue
 }
@@ -60,6 +61,7 @@ func (ctx *httpContext) OnHttpResponseHeaders(numHeaders int, endOfStream bool) 
 	printWasmProperties()
 	printConfigurationProperties()
 	printUpstreamProperties()
+	printConnectionProperties()
 
 	return types.ActionContinue
 }
@@ -143,4 +145,23 @@ func printUpstreamProperties() {
 	proxywasm.LogInfof(">> getUpstreamSha256PeerCertificateDigest: %v", getUpstreamSha256PeerCertificateDigest())
 	proxywasm.LogInfof(">> getUpstreamLocalAddress: %v", getUpstreamLocalAddress())
 	proxywasm.LogInfof(">> getUpstreamTransportFailureReason: %v", getUpstreamTransportFailureReason())
+}
+
+func printConnectionProperties() {
+	proxywasm.LogInfof(">> getDownstreamRemoteAddress: %v", getDownstreamRemoteAddress())
+	proxywasm.LogInfof(">> getDownstreamRemotePort: %v", getDownstreamRemotePort())
+	proxywasm.LogInfof(">> getDownstreamLocalAddress: %v", getDownstreamLocalAddress())
+	proxywasm.LogInfof(">> getDownstreamLocalPort: %v", getDownstreamLocalPort())
+	proxywasm.LogInfof(">> getDownstreamConnectionId: %v", getDownstreamConnectionId())
+	proxywasm.LogInfof(">> isDownstreamConnectionTls: %v", isDownstreamConnectionTls())
+	proxywasm.LogInfof(">> getDownstreamRequestedServerName: %v", getDownstreamRequestedServerName())
+	proxywasm.LogInfof(">> getDownstreamTlsVersion: %v", getDownstreamTlsVersion())
+	proxywasm.LogInfof(">> getDownstreamSubjectLocalCertificate: %v", getDownstreamSubjectLocalCertificate())
+	proxywasm.LogInfof(">> getDownstreamSubjectPeerCertificate: %v", getDownstreamSubjectPeerCertificate())
+	proxywasm.LogInfof(">> getDownstreamDnsSanLocalCertificate: %v", getDownstreamDnsSanLocalCertificate())
+	proxywasm.LogInfof(">> getDownstreamDnsSanPeerCertificate: %v", getDownstreamDnsSanPeerCertificate())
+	proxywasm.LogInfof(">> getDownstreamDnsSanPeerCertificate: %v", getDownstreamUriSanLocalCertificate())
+	proxywasm.LogInfof(">> getDownstreamDnsSanPeerCertificate: %v", getDownstreamUriSanPeerCertificate())
+	proxywasm.LogInfof(">> getDownstreamDnsSanPeerCertificate: %v", getDownstreamSha256PeerCertificateDigest())
+	proxywasm.LogInfof(">> getDownstreamTerminationDetails: %v", getDownstreamTerminationDetails())
 }

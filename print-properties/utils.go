@@ -38,6 +38,16 @@ func getPropertyFloat64(path []string) (float64, error) {
 	return deserializeToFloat64(b), nil
 }
 
+// get bool property
+func getPropertyBool(path []string) (bool, error) {
+	b, err := proxywasm.GetProperty(path)
+	if err != nil {
+		return false, err
+	}
+
+	return b[0] != 0, nil
+}
+
 // get complex property object as a map of byte slices
 // to be used when dealing with mixed type properties
 // func getPropertyByteSliceMap(path []string) (map[string][]byte, error) {
