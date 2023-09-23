@@ -383,12 +383,12 @@ func getNodeExtensions() []extension {
 func getNodeClientFeatures() []string {
 	nodeClientFeatures, err := proxywasm.GetProperty([]string{"node", "client_features"})
 	if err != nil {
-		proxywasm.LogWarnf("error reading node.extensions: %v", err)
+		proxywasm.LogWarnf("error reading node.client_features: %v", err)
 	}
 	return deserializeProtobufToStringSlice(nodeClientFeatures)
 }
 
-// seems not te be used or implemented
+// Not used by istio
 func getNodeListeningAddresses() string {
 	nodeListeningAddresses, err := getPropertyString([]string{"node", "listening_addresses"})
 	if err != nil {

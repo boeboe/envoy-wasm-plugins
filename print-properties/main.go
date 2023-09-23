@@ -50,6 +50,7 @@ func (ctx *httpContext) OnHttpRequestHeaders(numHeaders int, endOfStream bool) t
 	proxywasm.LogInfo("********** OnHttpRequestHeaders **********")
 	printWasmProperties()
 	printConfigurationProperties()
+	printUpstreamProperties()
 
 	return types.ActionContinue
 }
@@ -58,6 +59,7 @@ func (ctx *httpContext) OnHttpResponseHeaders(numHeaders int, endOfStream bool) 
 	proxywasm.LogInfo("********** OnHttpResponseHeaders **********")
 	printWasmProperties()
 	printConfigurationProperties()
+	printUpstreamProperties()
 
 	return types.ActionContinue
 }
@@ -126,4 +128,19 @@ func printConfigurationProperties() {
 	proxywasm.LogInfof(">> getXdsRouteMetadata: %+v", getXdsRouteMetadata())
 	proxywasm.LogInfof(">> getXdsUpstreamHostMetadata: %+v", getXdsUpstreamHostMetadata())
 	proxywasm.LogInfof(">> getXdsListenerFilterChainName: %v", getXdsListenerFilterChainName())
+}
+
+func printUpstreamProperties() {
+	proxywasm.LogInfof(">> getUpstreamAddress: %v", getUpstreamAddress())
+	proxywasm.LogInfof(">> getUpstreamPort: %v", getUpstreamPort())
+	proxywasm.LogInfof(">> getUpstreamTlsVersion: %v", getUpstreamTlsVersion())
+	proxywasm.LogInfof(">> getUpstreamSubjectLocalCertificate: %v", getUpstreamSubjectLocalCertificate())
+	proxywasm.LogInfof(">> getUpstreamSubjectPeerCertificate: %v", getUpstreamSubjectPeerCertificate())
+	proxywasm.LogInfof(">> getUpstreamDnsSanLocalCertificate: %v", getUpstreamDnsSanLocalCertificate())
+	proxywasm.LogInfof(">> getUpstreamDnsSanPeerCertificate: %v", getUpstreamDnsSanPeerCertificate())
+	proxywasm.LogInfof(">> getUpstreamUriSanLocalCertificate: %v", getUpstreamUriSanLocalCertificate())
+	proxywasm.LogInfof(">> getUpstreamUriSanPeerCertificate: %v", getUpstreamUriSanPeerCertificate())
+	proxywasm.LogInfof(">> getUpstreamSha256PeerCertificateDigest: %v", getUpstreamSha256PeerCertificateDigest())
+	proxywasm.LogInfof(">> getUpstreamLocalAddress: %v", getUpstreamLocalAddress())
+	proxywasm.LogInfof(">> getUpstreamTransportFailureReason: %v", getUpstreamTransportFailureReason())
 }
