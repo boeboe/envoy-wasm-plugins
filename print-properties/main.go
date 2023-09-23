@@ -46,24 +46,64 @@ type httpContext struct {
 	contextID uint32
 }
 
+// *********************************************
+// REQUEST PATH
+// *********************************************
+
 func (ctx *httpContext) OnHttpRequestHeaders(numHeaders int, endOfStream bool) types.Action {
 	proxywasm.LogInfo("********** OnHttpRequestHeaders **********")
 	printWasmProperties()
 	printConfigurationProperties()
 	printUpstreamProperties()
 	printConnectionProperties()
+	printRequestProperties()
 
 	return types.ActionContinue
 }
 
-func (ctx *httpContext) OnHttpResponseHeaders(numHeaders int, endOfStream bool) types.Action {
-	proxywasm.LogInfo("********** OnHttpResponseHeaders **********")
-	printWasmProperties()
-	printConfigurationProperties()
-	printUpstreamProperties()
-	printConnectionProperties()
+func (ctx *httpContext) OnHttpRequestBody(bodySize int, endOfStream bool) types.Action {
+	proxywasm.LogInfo("********** OnHttpRequestBody **********")
+	printRequestProperties()
 
 	return types.ActionContinue
+}
+
+func (ctx *httpContext) OnHttpRequestTrailers(bodySize int) types.Action {
+	proxywasm.LogInfo("********** OnHttpRequestTrailers **********")
+	printRequestProperties()
+
+	return types.ActionContinue
+}
+
+// *********************************************
+// RESPONSE PATH
+// *********************************************
+
+func (ctx *httpContext) OnHttpResponseHeaders(numHeaders int, endOfStream bool) types.Action {
+	proxywasm.LogInfo("********** OnHttpResponseHeaders **********")
+	printResponseProperties()
+
+	return types.ActionContinue
+}
+
+func (ctx *httpContext) OnHttpResponseBody(bodySize int, endOfStream bool) types.Action {
+	proxywasm.LogInfo("********** OnHttpResponseBody **********")
+	printResponseProperties()
+
+	return types.ActionContinue
+}
+
+func (ctx *httpContext) OnHttpResponseTrailers(bodySize int) types.Action {
+	proxywasm.LogInfo("********** OnHttpResponseTrailers **********")
+	printResponseProperties()
+
+	return types.ActionContinue
+}
+
+func (ctx *httpContext) OnHttpStreamDone() {
+	proxywasm.LogInfo("********** OnHttpStreamDone **********")
+	printRequestProperties()
+	printResponseProperties()
 }
 
 func printWasmProperties() {
@@ -164,4 +204,33 @@ func printConnectionProperties() {
 	proxywasm.LogInfof(">> getDownstreamDnsSanPeerCertificate: %v", getDownstreamUriSanPeerCertificate())
 	proxywasm.LogInfof(">> getDownstreamDnsSanPeerCertificate: %v", getDownstreamSha256PeerCertificateDigest())
 	proxywasm.LogInfof(">> getDownstreamTerminationDetails: %v", getDownstreamTerminationDetails())
+}
+
+func printResponseProperties() {
+	proxywasm.LogInfof(">> getResponseCode: %v", getResponseCode())
+	proxywasm.LogInfof(">> getResponseCodeDetails: %v", getResponseCodeDetails())
+	proxywasm.LogInfof(">> getResponseFlags: %v", getResponseFlags())
+	proxywasm.LogInfof(">> getResponseGrpcStatusCode: %v", getResponseGrpcStatusCode())
+	proxywasm.LogInfof(">> getResponseHeaders: %+v", getResponseHeaders())
+	proxywasm.LogInfof(">> getResponseTrailers: %+v", getResponseTrailers())
+	proxywasm.LogInfof(">> getResponseSize: %v", getResponseSize())
+	proxywasm.LogInfof(">> getResponseTotalSize: %v", getResponseTotalSize())
+}
+
+func printRequestProperties() {
+	proxywasm.LogInfof(">> getRequestPath: %v", getRequestPath())
+	proxywasm.LogInfof(">> getRequestUrlPath: %v", getRequestUrlPath())
+	proxywasm.LogInfof(">> getRequestHost: %v", getRequestHost())
+	proxywasm.LogInfof(">> getRequestScheme: %v", getRequestScheme())
+	proxywasm.LogInfof(">> getRequestMethod: %v", getRequestMethod())
+	proxywasm.LogInfof(">> getRequestHeaders: %+v", getRequestHeaders())
+	proxywasm.LogInfof(">> getRequestReferer: %v", getRequestReferer())
+	proxywasm.LogInfof(">> getRequestUserAgent: %v", getRequestUserAgent())
+	proxywasm.LogInfof(">> getRequestTime: %v", getRequestTime())
+	proxywasm.LogInfof(">> getRequestId: %v", getRequestId())
+	proxywasm.LogInfof(">> getRequestProtocol: %v", getRequestProtocol())
+	proxywasm.LogInfof(">> getRequestQuery: %v", getRequestQuery())
+	proxywasm.LogInfof(">> getRequestDuration: %v", getRequestDuration())
+	proxywasm.LogInfof(">> getRequestSize: %v", getRequestSize())
+	proxywasm.LogInfof(">> getRequestTotalSize: %v", getRequestTotalSize())
 }

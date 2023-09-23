@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/binary"
 	"math"
+	"time"
 	"unsafe"
 
 	"github.com/tetratelabs/proxy-wasm-go-sdk/proxywasm"
@@ -46,6 +47,16 @@ func getPropertyBool(path []string) (bool, error) {
 	}
 
 	return b[0] != 0, nil
+}
+
+// get timestamp property
+func getPropertTimestamp(path []string) (time.Time, error) {
+	b, err := proxywasm.GetProperty(path)
+	if err != nil {
+		return time.Now(), err
+	}
+
+	return deserializeToTimestamp(b), nil
 }
 
 // get complex property object as a map of byte slices
@@ -120,6 +131,11 @@ func deserializeToByteSliceSlice(bs []byte) [][]byte {
 	return ret
 }
 
+// deserialize byte array to uint64
+func deserializeToUint64(bytes []byte) uint64 {
+	return binary.LittleEndian.Uint64(bytes)
+}
+
 // deserialize byte array to float64
 func deserializeToFloat64(bytes []byte) float64 {
 	bits := binary.LittleEndian.Uint64(bytes)
@@ -127,9 +143,10 @@ func deserializeToFloat64(bytes []byte) float64 {
 	return float
 }
 
-// deserialize byte array to float64
-func deserializeToUint64(bytes []byte) uint64 {
-	return binary.LittleEndian.Uint64(bytes)
+// deserialize byte array to timestamp
+func deserializeToTimestamp(data []byte) time.Time {
+	nanos := int64(binary.LittleEndian.Uint64(data))
+	return time.Unix(0, nanos)
 }
 
 // deserialize a protobuf encoded string slice
