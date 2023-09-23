@@ -60,8 +60,7 @@ func getPropertyStringMap(path []string) (map[string]string, error) {
 	return deserializeToStringMap(b), nil
 }
 
-// get complex property object as a map of string
-// to be used when dealing with string only type properties
+// get complex property object as a string slice
 func getPropertyStringSlice(path []string) ([]string, error) {
 	b, err := proxywasm.GetProperty(path)
 	if err != nil {
