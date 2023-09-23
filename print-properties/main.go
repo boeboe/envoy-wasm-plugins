@@ -113,10 +113,10 @@ func printWasmProperties() {
 	proxywasm.LogInfof(">> getNodeExtensions: %v", getNodeExtensions())
 	proxywasm.LogInfof(">> getNodeClientFeatures: %v", getNodeClientFeatures())
 	proxywasm.LogInfof(">> getNodeListeningAddresses: %v", getNodeListeningAddresses())
-	proxywasm.LogInfof(">> getClusterMetadata: %v", getClusterMetadata())
-	proxywasm.LogInfof(">> getListenerMetadata: %v", getListenerMetadata())
-	proxywasm.LogInfof(">> getRouteMetadata: %v", getRouteMetadata())
-	proxywasm.LogInfof(">> getUpstreamHostMetadata: %v", getUpstreamHostMetadata())
+	proxywasm.LogInfof(">> getClusterMetadata: %+v", getClusterMetadata())
+	proxywasm.LogInfof(">> getListenerMetadata: %+v", getListenerMetadata())
+	proxywasm.LogInfof(">> getRouteMetadata: %+v", getRouteMetadata())
+	proxywasm.LogInfof(">> getUpstreamHostMetadata: %+v", getUpstreamHostMetadata())
 }
 
 func printConfigurationProperties() {
