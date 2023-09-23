@@ -52,7 +52,7 @@ func getClusterName() string {
 	return clusterName
 }
 
-// Get route name (only available in the response path)
+// Get route name (only available in the response path, cfr getXdsRouteName())
 // This matches the <spec.http.name> in the istio VirtualService CR
 func getRouteName() string {
 	routeName, err := getPropertyString([]string{"route_name"})

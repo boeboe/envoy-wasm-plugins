@@ -49,6 +49,7 @@ type httpContext struct {
 func (ctx *httpContext) OnHttpRequestHeaders(numHeaders int, endOfStream bool) types.Action {
 	proxywasm.LogInfo("********** OnHttpRequestHeaders **********")
 	printWasmProperties()
+	printConfigurationProperties()
 
 	return types.ActionContinue
 }
@@ -56,6 +57,7 @@ func (ctx *httpContext) OnHttpRequestHeaders(numHeaders int, endOfStream bool) t
 func (ctx *httpContext) OnHttpResponseHeaders(numHeaders int, endOfStream bool) types.Action {
 	proxywasm.LogInfo("********** OnHttpResponseHeaders **********")
 	printWasmProperties()
+	printConfigurationProperties()
 
 	return types.ActionContinue
 }
@@ -115,4 +117,13 @@ func printWasmProperties() {
 	proxywasm.LogInfof(">> getListenerMetadata: %v", getListenerMetadata())
 	proxywasm.LogInfof(">> getRouteMetadata: %v", getRouteMetadata())
 	proxywasm.LogInfof(">> getUpstreamHostMetadata: %v", getUpstreamHostMetadata())
+}
+
+func printConfigurationProperties() {
+	proxywasm.LogInfof(">> getXdsClusterName: %v", getXdsClusterName())
+	proxywasm.LogInfof(">> getXdsClusterMetadata: %+v", getXdsClusterMetadata())
+	proxywasm.LogInfof(">> getXdsRouteName: %v", getXdsRouteName())
+	proxywasm.LogInfof(">> getXdsRouteMetadata: %+v", getXdsRouteMetadata())
+	proxywasm.LogInfof(">> getXdsUpstreamHostMetadata: %+v", getXdsUpstreamHostMetadata())
+	proxywasm.LogInfof(">> getXdsListenerFilterChainName: %v", getXdsListenerFilterChainName())
 }
