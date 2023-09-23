@@ -353,22 +353,42 @@ func getNodeUserAgentBuildVersion() map[string]string {
 	return nodeUserAgentBuildVersion
 }
 
-func getNodeExtensions() string {
-	nodeExtensions, err := getPropertyString([]string{"node", "extensions"})
+type extension struct {
+	name      string
+	category  string
+	type_urls []string
+}
+
+func getNodeExtensions() []extension {
+	result := make([]extension, 0)
+	extensionsRawSlice, err := getPropertyByteSliceSlice([]string{"node", "extensions"})
 	if err != nil {
 		proxywasm.LogWarnf("error reading node.extensions: %v", err)
 	}
-	return nodeExtensions
+
+	for _, extensionRawSlice := range extensionsRawSlice {
+		extensionStringSlice := deserializeProtobufToStringSlice(extensionRawSlice)
+		extension := extension{}
+		extension.name = string(extensionStringSlice[0])
+		extension.category = string(extensionStringSlice[1])
+		extenstionTypeUrls := []string{}
+		extenstionTypeUrls = append(extenstionTypeUrls, extensionStringSlice[2:]...)
+		extension.type_urls = extenstionTypeUrls
+		result = append(result, extension)
+	}
+
+	return result
 }
 
-func getNodeClientFeatures() string {
-	nodeClientFeatures, err := getPropertyString([]string{"node", "client_features"})
+func getNodeClientFeatures() []string {
+	nodeClientFeatures, err := proxywasm.GetProperty([]string{"node", "client_features"})
 	if err != nil {
 		proxywasm.LogWarnf("error reading node.extensions: %v", err)
 	}
-	return nodeClientFeatures
+	return deserializeProtobufToStringSlice(nodeClientFeatures)
 }
 
+// seems not te be used or implemented
 func getNodeListeningAddresses() string {
 	nodeListeningAddresses, err := getPropertyString([]string{"node", "listening_addresses"})
 	if err != nil {

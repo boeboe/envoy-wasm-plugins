@@ -25,7 +25,7 @@ func getPropertyUint64(path []string) (uint64, error) {
 		return 0, err
 	}
 
-	return deserializeToFUint64(b), nil
+	return deserializeToUint64(b), nil
 }
 
 // get float64 property
@@ -38,8 +38,8 @@ func getPropertyFloat64(path []string) (float64, error) {
 	return deserializeToFloat64(b), nil
 }
 
-// // get complex property object as a map of byte slices
-// // to be used when dealing with mixed type properties
+// get complex property object as a map of byte slices
+// to be used when dealing with mixed type properties
 // func getPropertyByteSliceMap(path []string) (map[string][]byte, error) {
 // 	b, err := proxywasm.GetProperty(path)
 // 	if err != nil {
@@ -85,6 +85,31 @@ func deserializeToStringSlice(bs []byte) []string {
 	return ret
 }
 
+// get complex property object as a string slice
+func getPropertyByteSliceSlice(path []string) ([][]byte, error) {
+	b, err := proxywasm.GetProperty(path)
+	if err != nil {
+		return nil, err
+	}
+
+	return deserializeToByteSliceSlice(b), nil
+}
+
+// deserialize byte slice to string slice
+func deserializeToByteSliceSlice(bs []byte) [][]byte {
+	numStrings := int(binary.LittleEndian.Uint32(bs[:4]))
+	ret := make([][]byte, numStrings)
+	idx := 4
+	dataIdx := 4 + 8*numStrings
+	for i := 0; i < numStrings; i++ {
+		strLen := int(binary.LittleEndian.Uint64(bs[idx : idx+8]))
+		idx += 8
+		ret[i] = bs[dataIdx : dataIdx+strLen]
+		dataIdx += strLen + 2
+	}
+	return ret
+}
+
 // deserialize byte array to float64
 func deserializeToFloat64(bytes []byte) float64 {
 	bits := binary.LittleEndian.Uint64(bytes)
@@ -93,13 +118,28 @@ func deserializeToFloat64(bytes []byte) float64 {
 }
 
 // deserialize byte array to float64
-func deserializeToFUint64(bytes []byte) uint64 {
+func deserializeToUint64(bytes []byte) uint64 {
 	return binary.LittleEndian.Uint64(bytes)
 }
 
-// // deserialize byte slice to key value map, used for mixed type maps
-// //   - keys are always string
-// //   - value are raw byte strings that need further parsing
+// deserialize a protobuf encoded string slice
+func deserializeProtobufToStringSlice(data []byte) []string {
+	var ret []string
+	i := 0
+	for i < len(data) {
+		i++
+		length := int(data[i])
+		i++
+		str := string(data[i : i+length])
+		ret = append(ret, str)
+		i += length
+	}
+	return ret
+}
+
+// deserialize byte slice to key value map, used for mixed type maps
+//   - keys are always string
+//   - value are raw byte strings that need further parsing
 // func deserializeToByteMap(bs []byte) map[string][]byte {
 // 	numHeaders := binary.LittleEndian.Uint32(bs[0:4])
 // 	var sizeIndex = 4
