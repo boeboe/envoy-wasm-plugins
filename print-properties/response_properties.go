@@ -10,7 +10,7 @@ import (
 func getResponseCode() int {
 	responseCode, err := getPropertyUint64([]string{"response", "code"})
 	if err != nil {
-		proxywasm.LogWarnf("error reading response attribute response.code: %v", err)
+		proxywasm.LogWarnf("failed reading response attribute response.code: %v", err)
 		return 0
 	}
 	return int(responseCode)
@@ -20,7 +20,7 @@ func getResponseCode() int {
 func getResponseCodeDetails() string {
 	responseCodeDetails, err := getPropertyString([]string{"response", "code_details"})
 	if err != nil {
-		proxywasm.LogWarnf("error reading response attribute response.code_details: %v", err)
+		proxywasm.LogWarnf("failed reading response attribute response.code_details: %v", err)
 		return ""
 	}
 	return responseCodeDetails
@@ -30,7 +30,7 @@ func getResponseCodeDetails() string {
 func getResponseFlags() int {
 	responseFlags, err := getPropertyUint64([]string{"response", "flags"})
 	if err != nil {
-		proxywasm.LogWarnf("error reading response attribute response.flags: %v", err)
+		proxywasm.LogWarnf("failed reading response attribute response.flags: %v", err)
 		return 0
 	}
 	return int(responseFlags)
@@ -40,7 +40,7 @@ func getResponseFlags() int {
 func getResponseGrpcStatusCode() int {
 	responseGrpcStatusCode, err := getPropertyUint64([]string{"response", "grpc_status"})
 	if err != nil {
-		proxywasm.LogWarnf("error reading response attribute response.grpc_status: %v", err)
+		proxywasm.LogWarnf("failed reading response attribute response.grpc_status: %v", err)
 		return 0
 	}
 	return int(responseGrpcStatusCode)
@@ -50,7 +50,7 @@ func getResponseGrpcStatusCode() int {
 func getResponseHeaders() map[string]string {
 	responseHeaders, err := getPropertyStringMap([]string{"response", "headers"})
 	if err != nil {
-		proxywasm.LogWarnf("error reading response attribute response.headers: %v", err)
+		proxywasm.LogWarnf("failed reading response attribute response.headers: %v", err)
 		return map[string]string{}
 	}
 	return responseHeaders
@@ -60,7 +60,7 @@ func getResponseHeaders() map[string]string {
 func getResponseTrailers() map[string]string {
 	responseTrailers, err := getPropertyStringMap([]string{"response", "trailers"})
 	if err != nil {
-		proxywasm.LogWarnf("error reading response attribute response.trailers: %v", err)
+		proxywasm.LogWarnf("failed reading response attribute response.trailers: %v", err)
 		return map[string]string{}
 	}
 	return responseTrailers
@@ -70,7 +70,7 @@ func getResponseTrailers() map[string]string {
 func getResponseSize() int {
 	responseSize, err := getPropertyUint64([]string{"response", "size"})
 	if err != nil {
-		proxywasm.LogWarnf("error reading response attribute response.size: %v", err)
+		proxywasm.LogWarnf("failed reading response attribute response.size: %v", err)
 		return 0
 	}
 	return int(responseSize)
@@ -80,7 +80,7 @@ func getResponseSize() int {
 func getResponseTotalSize() int {
 	responseTotalSize, err := getPropertyUint64([]string{"response", "total_size"})
 	if err != nil {
-		proxywasm.LogWarnf("error reading response attribute response.total_size: %v", err)
+		proxywasm.LogWarnf("failed reading response attribute response.total_size: %v", err)
 		return 0
 	}
 	return int(responseTotalSize)

@@ -11,7 +11,7 @@ import (
 func getUpstreamAddress() string {
 	upstreamAddress, err := getPropertyString([]string{"upstream", "address"})
 	if err != nil {
-		proxywasm.LogWarnf("error reading upstream attribute upstream.address: %v", err)
+		proxywasm.LogWarnf("failed reading upstream attribute upstream.address: %v", err)
 		return ""
 	}
 	return upstreamAddress
@@ -21,7 +21,7 @@ func getUpstreamAddress() string {
 func getUpstreamPort() int {
 	upstreamPort, err := getPropertyUint64([]string{"upstream", "port"})
 	if err != nil {
-		proxywasm.LogWarnf("error reading upstream attribute upstream.port: %v", err)
+		proxywasm.LogWarnf("failed reading upstream attribute upstream.port: %v", err)
 		return 0
 	}
 	return int(upstreamPort)
@@ -31,7 +31,7 @@ func getUpstreamPort() int {
 func getUpstreamTlsVersion() string {
 	upstreamTlsVersion, err := getPropertyString([]string{"upstream", "tls_version"})
 	if err != nil {
-		proxywasm.LogWarnf("error reading upstream attribute upstream.tls_version: %v", err)
+		proxywasm.LogWarnf("failed reading upstream attribute upstream.tls_version: %v", err)
 		return ""
 	}
 	return upstreamTlsVersion
@@ -41,7 +41,7 @@ func getUpstreamTlsVersion() string {
 func getUpstreamSubjectLocalCertificate() string {
 	upstreamSubjectLocalCertificate, err := getPropertyString([]string{"upstream", "subject_local_certificate"})
 	if err != nil {
-		proxywasm.LogWarnf("error reading upstream attribute upstream.subject_local_certificate: %v", err)
+		proxywasm.LogWarnf("failed reading upstream attribute upstream.subject_local_certificate: %v", err)
 		return ""
 	}
 	return upstreamSubjectLocalCertificate
@@ -51,7 +51,7 @@ func getUpstreamSubjectLocalCertificate() string {
 func getUpstreamSubjectPeerCertificate() string {
 	upstreamSubjectPeerCertificate, err := getPropertyString([]string{"upstream", "subject_peer_certificate"})
 	if err != nil {
-		proxywasm.LogWarnf("error reading upstream attribute upstream.subject_peer_certificate: %v", err)
+		proxywasm.LogWarnf("failed reading upstream attribute upstream.subject_peer_certificate: %v", err)
 		return ""
 	}
 	return upstreamSubjectPeerCertificate
@@ -61,7 +61,7 @@ func getUpstreamSubjectPeerCertificate() string {
 func getUpstreamDnsSanLocalCertificate() string {
 	upstreamDnsSanLocalCertificate, err := getPropertyString([]string{"upstream", "dns_san_local_certificate"})
 	if err != nil {
-		proxywasm.LogWarnf("error reading upstream attribute upstream.dns_san_local_certificate: %v", err)
+		proxywasm.LogWarnf("failed reading upstream attribute upstream.dns_san_local_certificate: %v", err)
 		return ""
 	}
 	return upstreamDnsSanLocalCertificate
@@ -71,7 +71,7 @@ func getUpstreamDnsSanLocalCertificate() string {
 func getUpstreamDnsSanPeerCertificate() string {
 	upstreamDnsSanPeerCertificate, err := getPropertyString([]string{"upstream", "dns_san_peer_certificate"})
 	if err != nil {
-		proxywasm.LogWarnf("error reading upstream attribute upstream.dns_san_peer_certificate: %v", err)
+		proxywasm.LogWarnf("failed reading upstream attribute upstream.dns_san_peer_certificate: %v", err)
 		return ""
 	}
 	return upstreamDnsSanPeerCertificate
@@ -81,7 +81,7 @@ func getUpstreamDnsSanPeerCertificate() string {
 func getUpstreamUriSanLocalCertificate() string {
 	upstreamUriSanLocalCertificate, err := getPropertyString([]string{"upstream", "uri_san_local_certificate"})
 	if err != nil {
-		proxywasm.LogWarnf("error reading upstream attribute upstream.uri_san_local_certificate: %v", err)
+		proxywasm.LogWarnf("failed reading upstream attribute upstream.uri_san_local_certificate: %v", err)
 		return ""
 	}
 	return upstreamUriSanLocalCertificate
@@ -91,7 +91,7 @@ func getUpstreamUriSanLocalCertificate() string {
 func getUpstreamUriSanPeerCertificate() string {
 	upstreamUriSanPeerCertificate, err := getPropertyString([]string{"upstream", "uri_san_peer_certificate"})
 	if err != nil {
-		proxywasm.LogWarnf("error reading upstream attribute upstream.uri_san_peer_certificate: %v", err)
+		proxywasm.LogWarnf("failed reading upstream attribute upstream.uri_san_peer_certificate: %v", err)
 		return ""
 	}
 	return upstreamUriSanPeerCertificate
@@ -101,7 +101,7 @@ func getUpstreamUriSanPeerCertificate() string {
 func getUpstreamSha256PeerCertificateDigest() string {
 	upstreamSha256PeerCertificateDigest, err := getPropertyString([]string{"upstream", "sha256_peer_certificate_digest"})
 	if err != nil {
-		proxywasm.LogWarnf("error reading upstream attribute upstream.sha256_peer_certificate_digest: %v", err)
+		proxywasm.LogWarnf("failed reading upstream attribute upstream.sha256_peer_certificate_digest: %v", err)
 		return ""
 	}
 	return upstreamSha256PeerCertificateDigest
@@ -111,7 +111,7 @@ func getUpstreamSha256PeerCertificateDigest() string {
 func getUpstreamLocalAddress() string {
 	upstreamLocalAddress, err := getPropertyString([]string{"upstream", "local_address"})
 	if err != nil {
-		proxywasm.LogWarnf("error reading upstream attribute upstream.local_address: %v", err)
+		proxywasm.LogWarnf("failed reading upstream attribute upstream.local_address: %v", err)
 		return ""
 	}
 	return upstreamLocalAddress
@@ -121,7 +121,7 @@ func getUpstreamLocalAddress() string {
 func getUpstreamTransportFailureReason() string {
 	upstreamTransportFailureReason, err := getPropertyString([]string{"upstream", "transport_failure_reason"})
 	if err != nil {
-		proxywasm.LogWarnf("error reading upstream attribute upstream.transport_failure_reason: %v", err)
+		proxywasm.LogWarnf("failed reading upstream attribute upstream.transport_failure_reason: %v", err)
 		return ""
 	}
 	return upstreamTransportFailureReason

@@ -150,7 +150,7 @@ func printWasmProperties() {
 	proxywasm.LogInfof(">> getNodeMetadata.workloadName: %v", getNodeMetadata().workloadName)
 
 	proxywasm.LogInfof(">> getNodeDynamicParams: %v", getNodeDynamicParams())
-	proxywasm.LogInfof(">> getNodeLocality: %v", getNodeLocality())
+	proxywasm.LogInfof(">> getNodeLocality: %+v", getNodeLocality())
 	proxywasm.LogInfof(">> getNodeUserAgentName: %v", getNodeUserAgentName())
 	proxywasm.LogInfof(">> getNodeUserAgentVersion: %v", getNodeUserAgentVersion())
 	proxywasm.LogInfof(">> getNodeUserAgentBuildVersion: %v", getNodeUserAgentBuildVersion())

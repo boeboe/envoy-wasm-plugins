@@ -1,6 +1,5 @@
-// Helper function to retreive upstream properties
+// Helper function to retreive downstream connection properties
 // https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/advanced/attributes#connection-attributes
-
 package main
 
 import (
@@ -11,7 +10,7 @@ import (
 func getDownstreamRemoteAddress() string {
 	downstreamRemoteAddress, err := getPropertyString([]string{"source", "address"})
 	if err != nil {
-		proxywasm.LogWarnf("error reading source attribute source.address: %v", err)
+		proxywasm.LogWarnf("failed reading source attribute source.address: %v", err)
 		return ""
 	}
 	return downstreamRemoteAddress
@@ -21,7 +20,7 @@ func getDownstreamRemoteAddress() string {
 func getDownstreamRemotePort() int {
 	downstreamRemotePort, err := getPropertyUint64([]string{"source", "port"})
 	if err != nil {
-		proxywasm.LogWarnf("error reading source attribute source.port: %v", err)
+		proxywasm.LogWarnf("failed reading source attribute source.port: %v", err)
 		return 0
 	}
 	return int(downstreamRemotePort)
@@ -31,7 +30,7 @@ func getDownstreamRemotePort() int {
 func getDownstreamLocalAddress() string {
 	downstreamLocalAddress, err := getPropertyString([]string{"destination", "address"})
 	if err != nil {
-		proxywasm.LogWarnf("error reading destination attribute destination.address: %v", err)
+		proxywasm.LogWarnf("failed reading destination attribute destination.address: %v", err)
 		return ""
 	}
 	return downstreamLocalAddress
@@ -41,7 +40,7 @@ func getDownstreamLocalAddress() string {
 func getDownstreamLocalPort() int {
 	downstreamLocalPort, err := getPropertyUint64([]string{"destination", "port"})
 	if err != nil {
-		proxywasm.LogWarnf("error reading destination attribute destination.port: %v", err)
+		proxywasm.LogWarnf("failed reading destination attribute destination.port: %v", err)
 		return 0
 	}
 	return int(downstreamLocalPort)
@@ -51,7 +50,7 @@ func getDownstreamLocalPort() int {
 func getDownstreamConnectionId() uint {
 	downstreamConnectionId, err := getPropertyUint64([]string{"connection", "id"})
 	if err != nil {
-		proxywasm.LogWarnf("error reading connection attribute connection.id: %v", err)
+		proxywasm.LogWarnf("failed reading connection attribute connection.id: %v", err)
 		return 0
 	}
 	return uint(downstreamConnectionId)
@@ -61,7 +60,7 @@ func getDownstreamConnectionId() uint {
 func isDownstreamConnectionTls() bool {
 	downstreamConnectionTls, err := getPropertyBool([]string{"connection", "mtls"})
 	if err != nil {
-		proxywasm.LogWarnf("error reading connection attribute connection.mtls: %v", err)
+		proxywasm.LogWarnf("failed reading connection attribute connection.mtls: %v", err)
 		return false
 	}
 	return downstreamConnectionTls
@@ -71,7 +70,7 @@ func isDownstreamConnectionTls() bool {
 func getDownstreamRequestedServerName() string {
 	downstreamRequestedServerName, err := getPropertyString([]string{"connection", "requested_server_name"})
 	if err != nil {
-		proxywasm.LogWarnf("error reading connection attribute connection.requested_server_name: %v", err)
+		proxywasm.LogWarnf("failed reading connection attribute connection.requested_server_name: %v", err)
 		return ""
 	}
 	return downstreamRequestedServerName
@@ -81,7 +80,7 @@ func getDownstreamRequestedServerName() string {
 func getDownstreamTlsVersion() string {
 	downstreamTlsVersion, err := getPropertyString([]string{"connection", "tls_version"})
 	if err != nil {
-		proxywasm.LogWarnf("error reading connection attribute connection.tls_version: %v", err)
+		proxywasm.LogWarnf("failed reading connection attribute connection.tls_version: %v", err)
 		return ""
 	}
 	return downstreamTlsVersion
@@ -91,7 +90,7 @@ func getDownstreamTlsVersion() string {
 func getDownstreamSubjectLocalCertificate() string {
 	downstreamSubjectLocalCertificate, err := getPropertyString([]string{"connection", "subject_local_certificate"})
 	if err != nil {
-		proxywasm.LogWarnf("error reading connection attribute connection.subject_local_certificate: %v", err)
+		proxywasm.LogWarnf("failed reading connection attribute connection.subject_local_certificate: %v", err)
 		return ""
 	}
 	return downstreamSubjectLocalCertificate
@@ -101,7 +100,7 @@ func getDownstreamSubjectLocalCertificate() string {
 func getDownstreamSubjectPeerCertificate() string {
 	downstreamSubjectPeerCertificate, err := getPropertyString([]string{"connection", "subject_peer_certificate"})
 	if err != nil {
-		proxywasm.LogWarnf("error reading connection attribute connection.subject_peer_certificate: %v", err)
+		proxywasm.LogWarnf("failed reading connection attribute connection.subject_peer_certificate: %v", err)
 		return ""
 	}
 	return downstreamSubjectPeerCertificate
@@ -111,7 +110,7 @@ func getDownstreamSubjectPeerCertificate() string {
 func getDownstreamDnsSanLocalCertificate() string {
 	downstreamDnsSanLocalCertificate, err := getPropertyString([]string{"connection", "dns_san_local_certificate"})
 	if err != nil {
-		proxywasm.LogWarnf("error reading connection attribute connection.dns_san_local_certificate: %v", err)
+		proxywasm.LogWarnf("failed reading connection attribute connection.dns_san_local_certificate: %v", err)
 		return ""
 	}
 	return downstreamDnsSanLocalCertificate
@@ -121,7 +120,7 @@ func getDownstreamDnsSanLocalCertificate() string {
 func getDownstreamDnsSanPeerCertificate() string {
 	downstreamDnsSanPeerCertificate, err := getPropertyString([]string{"connection", "dns_san_peer_certificate"})
 	if err != nil {
-		proxywasm.LogWarnf("error reading connection attribute connection.dns_san_peer_certificate: %v", err)
+		proxywasm.LogWarnf("failed reading connection attribute connection.dns_san_peer_certificate: %v", err)
 		return ""
 	}
 	return downstreamDnsSanPeerCertificate
@@ -131,7 +130,7 @@ func getDownstreamDnsSanPeerCertificate() string {
 func getDownstreamUriSanLocalCertificate() string {
 	downstreamUriSanLocalCertificate, err := getPropertyString([]string{"connection", "uri_san_local_certificate"})
 	if err != nil {
-		proxywasm.LogWarnf("error reading connection attribute connection.uri_san_local_certificate: %v", err)
+		proxywasm.LogWarnf("failed reading connection attribute connection.uri_san_local_certificate: %v", err)
 		return ""
 	}
 	return downstreamUriSanLocalCertificate
@@ -141,7 +140,7 @@ func getDownstreamUriSanLocalCertificate() string {
 func getDownstreamUriSanPeerCertificate() string {
 	downstreamUriSanPeerCertificate, err := getPropertyString([]string{"connection", "uri_san_peer_certificate"})
 	if err != nil {
-		proxywasm.LogWarnf("error reading connection attribute connection.uri_san_peer_certificate: %v", err)
+		proxywasm.LogWarnf("failed reading connection attribute connection.uri_san_peer_certificate: %v", err)
 		return ""
 	}
 	return downstreamUriSanPeerCertificate
@@ -151,7 +150,7 @@ func getDownstreamUriSanPeerCertificate() string {
 func getDownstreamSha256PeerCertificateDigest() string {
 	downstreamSha256PeerCertificateDigest, err := getPropertyString([]string{"connection", "sha256_peer_certificate_digest"})
 	if err != nil {
-		proxywasm.LogWarnf("error reading connection attribute connection.sha256_peer_certificate_digest: %v", err)
+		proxywasm.LogWarnf("failed reading connection attribute connection.sha256_peer_certificate_digest: %v", err)
 		return ""
 	}
 	return downstreamSha256PeerCertificateDigest
@@ -161,7 +160,7 @@ func getDownstreamSha256PeerCertificateDigest() string {
 func getDownstreamTerminationDetails() string {
 	downstreamTerminationDetails, err := getPropertyString([]string{"connection", "termination_details"})
 	if err != nil {
-		proxywasm.LogWarnf("error reading connection attribute connection.termination_details: %v", err)
+		proxywasm.LogWarnf("failed reading connection attribute connection.termination_details: %v", err)
 		return ""
 	}
 	return downstreamTerminationDetails

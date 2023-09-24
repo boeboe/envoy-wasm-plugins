@@ -12,7 +12,7 @@ import (
 func getRequestPath() string {
 	requestPath, err := getPropertyString([]string{"request", "path"})
 	if err != nil {
-		proxywasm.LogWarnf("error reading request attribute request.path: %v", err)
+		proxywasm.LogWarnf("failed reading request attribute request.path: %v", err)
 		return ""
 	}
 	return requestPath
@@ -22,7 +22,7 @@ func getRequestPath() string {
 func getRequestUrlPath() string {
 	requestUrlPath, err := getPropertyString([]string{"request", "url_path"})
 	if err != nil {
-		proxywasm.LogWarnf("error reading request attribute request.url_path: %v", err)
+		proxywasm.LogWarnf("failed reading request attribute request.url_path: %v", err)
 		return ""
 	}
 	return requestUrlPath
@@ -32,7 +32,7 @@ func getRequestUrlPath() string {
 func getRequestHost() string {
 	requestHost, err := getPropertyString([]string{"request", "host"})
 	if err != nil {
-		proxywasm.LogWarnf("error reading request attribute request.host: %v", err)
+		proxywasm.LogWarnf("failed reading request attribute request.host: %v", err)
 		return ""
 	}
 	return requestHost
@@ -42,7 +42,7 @@ func getRequestHost() string {
 func getRequestScheme() string {
 	requestScheme, err := getPropertyString([]string{"request", "scheme"})
 	if err != nil {
-		proxywasm.LogWarnf("error reading request attribute request.scheme: %v", err)
+		proxywasm.LogWarnf("failed reading request attribute request.scheme: %v", err)
 		return ""
 	}
 	return requestScheme
@@ -52,7 +52,7 @@ func getRequestScheme() string {
 func getRequestMethod() string {
 	requestMethod, err := getPropertyString([]string{"request", "method"})
 	if err != nil {
-		proxywasm.LogWarnf("error reading request attribute request.method: %v", err)
+		proxywasm.LogWarnf("failed reading request attribute request.method: %v", err)
 		return ""
 	}
 	return requestMethod
@@ -62,7 +62,7 @@ func getRequestMethod() string {
 func getRequestHeaders() map[string]string {
 	requestHeaders, err := getPropertyStringMap([]string{"request", "headers"})
 	if err != nil {
-		proxywasm.LogWarnf("error reading request attribute request.headers: %v", err)
+		proxywasm.LogWarnf("failed reading request attribute request.headers: %v", err)
 		return map[string]string{}
 	}
 	return requestHeaders
@@ -72,7 +72,7 @@ func getRequestHeaders() map[string]string {
 func getRequestReferer() string {
 	requestReferer, err := getPropertyString([]string{"request", "referer"})
 	if err != nil {
-		proxywasm.LogWarnf("error reading request attribute request.referer: %v", err)
+		proxywasm.LogWarnf("failed reading request attribute request.referer: %v", err)
 		return ""
 	}
 	return requestReferer
@@ -82,7 +82,7 @@ func getRequestReferer() string {
 func getRequestUserAgent() string {
 	requestUserAgent, err := getPropertyString([]string{"request", "useragent"})
 	if err != nil {
-		proxywasm.LogWarnf("error reading request attribute request.useragent: %v", err)
+		proxywasm.LogWarnf("failed reading request attribute request.useragent: %v", err)
 		return ""
 	}
 	return requestUserAgent
@@ -92,7 +92,7 @@ func getRequestUserAgent() string {
 func getRequestTime() time.Time {
 	requestTime, err := getPropertTimestamp([]string{"request", "time"})
 	if err != nil {
-		proxywasm.LogWarnf("error reading request attribute request.time: %v", err)
+		proxywasm.LogWarnf("failed reading request attribute request.time: %v", err)
 		return time.Now()
 	}
 	return requestTime
@@ -102,7 +102,7 @@ func getRequestTime() time.Time {
 func getRequestId() string {
 	requestId, err := getPropertyString([]string{"request", "id"})
 	if err != nil {
-		proxywasm.LogWarnf("error reading request attribute request.id: %v", err)
+		proxywasm.LogWarnf("failed reading request attribute request.id: %v", err)
 		return ""
 	}
 	return requestId
@@ -112,7 +112,7 @@ func getRequestId() string {
 func getRequestProtocol() string {
 	requestProtocol, err := getPropertyString([]string{"request", "protocol"})
 	if err != nil {
-		proxywasm.LogWarnf("error reading request attribute request.protocol: %v", err)
+		proxywasm.LogWarnf("failed reading request attribute request.protocol: %v", err)
 		return ""
 	}
 	return requestProtocol
@@ -122,7 +122,7 @@ func getRequestProtocol() string {
 func getRequestQuery() string {
 	requestQuery, err := getPropertyString([]string{"request", "query"})
 	if err != nil {
-		proxywasm.LogWarnf("error reading request attribute request.query: %v", err)
+		proxywasm.LogWarnf("failed reading request attribute request.query: %v", err)
 		return ""
 	}
 	return requestQuery
@@ -132,7 +132,7 @@ func getRequestQuery() string {
 func getRequestDuration() int {
 	requestDuration, err := getPropertyUint64([]string{"request", "duration"})
 	if err != nil {
-		proxywasm.LogWarnf("error reading request attribute request.duration: %v", err)
+		proxywasm.LogWarnf("failed reading request attribute request.duration: %v", err)
 		return 0
 	}
 	return int(requestDuration)
@@ -142,7 +142,7 @@ func getRequestDuration() int {
 func getRequestSize() int {
 	requestSize, err := getPropertyUint64([]string{"request", "size"})
 	if err != nil {
-		proxywasm.LogWarnf("error reading request attribute request.size: %v", err)
+		proxywasm.LogWarnf("failed reading request attribute request.size: %v", err)
 		return 0
 	}
 	return int(requestSize)
@@ -152,7 +152,7 @@ func getRequestSize() int {
 func getRequestTotalSize() int {
 	requestTotalSize, err := getPropertyUint64([]string{"request", "total_size"})
 	if err != nil {
-		proxywasm.LogWarnf("error reading request attribute request.total_size: %v", err)
+		proxywasm.LogWarnf("failed reading request attribute request.total_size: %v", err)
 		return 0
 	}
 	return int(requestTotalSize)

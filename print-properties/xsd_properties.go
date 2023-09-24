@@ -12,7 +12,7 @@ import (
 func getXdsClusterName() string {
 	xdsClusterName, err := getPropertyString([]string{"xds", "cluster_name"})
 	if err != nil {
-		proxywasm.LogWarnf("error reading configuration attribute xds.cluster_name: %v", err)
+		proxywasm.LogWarnf("failed reading xsd configuration attribute xds.cluster_name: %v", err)
 		return ""
 	}
 	return xdsClusterName
@@ -28,7 +28,7 @@ func getXdsClusterMetadata() istioFilterMetadata {
 func getXdsRouteName() string {
 	xdsRouteName, err := getPropertyString([]string{"xds", "route_name"})
 	if err != nil {
-		proxywasm.LogWarnf("error reading configuration attribute xds.route_name: %v", err)
+		proxywasm.LogWarnf("failed reading xsd configuration attribute xds.route_name: %v", err)
 		return ""
 	}
 	return xdsRouteName
@@ -48,7 +48,7 @@ func getXdsUpstreamHostMetadata() istioFilterMetadata {
 func getXdsListenerFilterChainName() string {
 	pluginName, err := getPropertyString([]string{"xds", "filter_chain_name"})
 	if err != nil {
-		proxywasm.LogWarnf("error reading configuration attribute xds.filter_chain_name: %v", err)
+		proxywasm.LogWarnf("failed reading xsd configuration attribute xds.filter_chain_name: %v", err)
 		return ""
 	}
 	return pluginName
