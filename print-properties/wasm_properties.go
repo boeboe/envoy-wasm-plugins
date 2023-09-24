@@ -64,6 +64,7 @@ func getRouteName() string {
 }
 
 // Identifies the direction of the traffic relative to the local Envoy
+//
 // https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/core/v3/base.proto#enum-config-core-v3-trafficdirection
 type trafficDirection int
 
@@ -334,6 +335,7 @@ func getNodeDynamicParams() string {
 }
 
 // Identifies location of where either Envoy runs or where upstream hosts run
+//
 // https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/core/v3/base.proto#config-core-v3-locality
 type locality struct {
 	region  string
@@ -400,6 +402,7 @@ func getNodeUserAgentBuildVersion() map[string]string {
 }
 
 // Version and identification for an Envoy extension
+//
 // https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/core/v3/base.proto#config-core-v3-extension
 type extension struct {
 	name      string
