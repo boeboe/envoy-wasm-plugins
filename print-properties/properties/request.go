@@ -1,6 +1,6 @@
 // Helper function to retreive request properties
 // https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/advanced/attributes#request-attributes
-package main
+package properties
 
 import (
 	"time"
@@ -9,7 +9,7 @@ import (
 )
 
 // Get the path portion of the URL
-func getRequestPath() string {
+func GetRequestPath() string {
 	requestPath, err := getPropertyString([]string{"request", "path"})
 	if err != nil {
 		proxywasm.LogWarnf("failed reading request attribute request.path: %v", err)
@@ -19,7 +19,7 @@ func getRequestPath() string {
 }
 
 // Get the path portion of the URL without the query string
-func getRequestUrlPath() string {
+func GetRequestUrlPath() string {
 	requestUrlPath, err := getPropertyString([]string{"request", "url_path"})
 	if err != nil {
 		proxywasm.LogWarnf("failed reading request attribute request.url_path: %v", err)
@@ -29,7 +29,7 @@ func getRequestUrlPath() string {
 }
 
 // Get the host portion of the URL
-func getRequestHost() string {
+func GetRequestHost() string {
 	requestHost, err := getPropertyString([]string{"request", "host"})
 	if err != nil {
 		proxywasm.LogWarnf("failed reading request attribute request.host: %v", err)
@@ -39,7 +39,7 @@ func getRequestHost() string {
 }
 
 // Get the scheme portion of the URL e.g. “http”
-func getRequestScheme() string {
+func GetRequestScheme() string {
 	requestScheme, err := getPropertyString([]string{"request", "scheme"})
 	if err != nil {
 		proxywasm.LogWarnf("failed reading request attribute request.scheme: %v", err)
@@ -49,7 +49,7 @@ func getRequestScheme() string {
 }
 
 // Get the request method e.g. “GET”
-func getRequestMethod() string {
+func GetRequestMethod() string {
 	requestMethod, err := getPropertyString([]string{"request", "method"})
 	if err != nil {
 		proxywasm.LogWarnf("failed reading request attribute request.method: %v", err)
@@ -59,7 +59,7 @@ func getRequestMethod() string {
 }
 
 // Get all request headers indexed by the lower-cased header name
-func getRequestHeaders() map[string]string {
+func GetRequestHeaders() map[string]string {
 	requestHeaders, err := getPropertyStringMap([]string{"request", "headers"})
 	if err != nil {
 		proxywasm.LogWarnf("failed reading request attribute request.headers: %v", err)
@@ -69,7 +69,7 @@ func getRequestHeaders() map[string]string {
 }
 
 // Get the referer request header
-func getRequestReferer() string {
+func GetRequestReferer() string {
 	requestReferer, err := getPropertyString([]string{"request", "referer"})
 	if err != nil {
 		proxywasm.LogWarnf("failed reading request attribute request.referer: %v", err)
@@ -79,7 +79,7 @@ func getRequestReferer() string {
 }
 
 // Get the user agent request header
-func getRequestUserAgent() string {
+func GetRequestUserAgent() string {
 	requestUserAgent, err := getPropertyString([]string{"request", "useragent"})
 	if err != nil {
 		proxywasm.LogWarnf("failed reading request attribute request.useragent: %v", err)
@@ -89,7 +89,7 @@ func getRequestUserAgent() string {
 }
 
 // Get the time of the first byte received, approximated to nano-seconds
-func getRequestTime() time.Time {
+func GetRequestTime() time.Time {
 	requestTime, err := getPropertTimestamp([]string{"request", "time"})
 	if err != nil {
 		proxywasm.LogWarnf("failed reading request attribute request.time: %v", err)
@@ -99,7 +99,7 @@ func getRequestTime() time.Time {
 }
 
 // Get the request ID corresponding to x-request-id header value
-func getRequestId() string {
+func GetRequestId() string {
 	requestId, err := getPropertyString([]string{"request", "id"})
 	if err != nil {
 		proxywasm.LogWarnf("failed reading request attribute request.id: %v", err)
@@ -109,7 +109,7 @@ func getRequestId() string {
 }
 
 // Get the request protocol (“HTTP/1.0”, “HTTP/1.1”, “HTTP/2”, or “HTTP/3”)
-func getRequestProtocol() string {
+func GetRequestProtocol() string {
 	requestProtocol, err := getPropertyString([]string{"request", "protocol"})
 	if err != nil {
 		proxywasm.LogWarnf("failed reading request attribute request.protocol: %v", err)
@@ -119,7 +119,7 @@ func getRequestProtocol() string {
 }
 
 // Get the query portion of the URL in the format of “name1=value1&name2=value2”
-func getRequestQuery() string {
+func GetRequestQuery() string {
 	requestQuery, err := getPropertyString([]string{"request", "query"})
 	if err != nil {
 		proxywasm.LogWarnf("failed reading request attribute request.query: %v", err)
@@ -129,7 +129,7 @@ func getRequestQuery() string {
 }
 
 // Get the total duration of the request, approximated to nano-seconds
-func getRequestDuration() int {
+func GetRequestDuration() int {
 	requestDuration, err := getPropertyUint64([]string{"request", "duration"})
 	if err != nil {
 		proxywasm.LogWarnf("failed reading request attribute request.duration: %v", err)
@@ -139,7 +139,7 @@ func getRequestDuration() int {
 }
 
 // Get the size of the request body. Content length header is used if available
-func getRequestSize() int {
+func GetRequestSize() int {
 	requestSize, err := getPropertyUint64([]string{"request", "size"})
 	if err != nil {
 		proxywasm.LogWarnf("failed reading request attribute request.size: %v", err)
@@ -149,7 +149,7 @@ func getRequestSize() int {
 }
 
 // Get the total size of the request including the approximate uncompressed size of the headers
-func getRequestTotalSize() int {
+func GetRequestTotalSize() int {
 	requestTotalSize, err := getPropertyUint64([]string{"request", "total_size"})
 	if err != nil {
 		proxywasm.LogWarnf("failed reading request attribute request.total_size: %v", err)

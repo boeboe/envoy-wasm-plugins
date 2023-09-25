@@ -1,13 +1,13 @@
 // Helper function to retreive response properties
 // https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/advanced/attributes#response-attributes
-package main
+package properties
 
 import (
 	"github.com/tetratelabs/proxy-wasm-go-sdk/proxywasm"
 )
 
 // Get response HTTP status code
-func getResponseCode() int {
+func GetResponseCode() int {
 	responseCode, err := getPropertyUint64([]string{"response", "code"})
 	if err != nil {
 		proxywasm.LogWarnf("failed reading response attribute response.code: %v", err)
@@ -17,7 +17,7 @@ func getResponseCode() int {
 }
 
 // Get internal response code details (subject to change)
-func getResponseCodeDetails() string {
+func GetResponseCodeDetails() string {
 	responseCodeDetails, err := getPropertyString([]string{"response", "code_details"})
 	if err != nil {
 		proxywasm.LogWarnf("failed reading response attribute response.code_details: %v", err)
@@ -27,7 +27,7 @@ func getResponseCodeDetails() string {
 }
 
 // Get additional details about the response beyond the standard response code encoded as a bit-vector
-func getResponseFlags() int {
+func GetResponseFlags() int {
 	responseFlags, err := getPropertyUint64([]string{"response", "flags"})
 	if err != nil {
 		proxywasm.LogWarnf("failed reading response attribute response.flags: %v", err)
@@ -37,7 +37,7 @@ func getResponseFlags() int {
 }
 
 // Get response gRPC status code
-func getResponseGrpcStatusCode() int {
+func GetResponseGrpcStatusCode() int {
 	responseGrpcStatusCode, err := getPropertyUint64([]string{"response", "grpc_status"})
 	if err != nil {
 		proxywasm.LogWarnf("failed reading response attribute response.grpc_status: %v", err)
@@ -47,7 +47,7 @@ func getResponseGrpcStatusCode() int {
 }
 
 // Get all response headers indexed by the lower-cased header name
-func getResponseHeaders() map[string]string {
+func GetResponseHeaders() map[string]string {
 	responseHeaders, err := getPropertyStringMap([]string{"response", "headers"})
 	if err != nil {
 		proxywasm.LogWarnf("failed reading response attribute response.headers: %v", err)
@@ -57,7 +57,7 @@ func getResponseHeaders() map[string]string {
 }
 
 // Get all response trailers indexed by the lower-cased trailer name
-func getResponseTrailers() map[string]string {
+func GetResponseTrailers() map[string]string {
 	responseTrailers, err := getPropertyStringMap([]string{"response", "trailers"})
 	if err != nil {
 		proxywasm.LogWarnf("failed reading response attribute response.trailers: %v", err)
@@ -67,7 +67,7 @@ func getResponseTrailers() map[string]string {
 }
 
 // Get size of the response body
-func getResponseSize() int {
+func GetResponseSize() int {
 	responseSize, err := getPropertyUint64([]string{"response", "size"})
 	if err != nil {
 		proxywasm.LogWarnf("failed reading response attribute response.size: %v", err)
@@ -77,7 +77,7 @@ func getResponseSize() int {
 }
 
 // Get total size of the response including the approximate uncompressed size of the headers and the trailers
-func getResponseTotalSize() int {
+func GetResponseTotalSize() int {
 	responseTotalSize, err := getPropertyUint64([]string{"response", "total_size"})
 	if err != nil {
 		proxywasm.LogWarnf("failed reading response attribute response.total_size: %v", err)

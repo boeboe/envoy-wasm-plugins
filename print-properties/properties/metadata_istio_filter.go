@@ -1,5 +1,5 @@
 // Helper function and structs to parse istio filter metadata
-package main
+package properties
 
 import (
 	"strings"
