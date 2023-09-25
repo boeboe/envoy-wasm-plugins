@@ -294,7 +294,7 @@ func GetNodeProxyConfigExtraStatTags() []string {
 	return extraStatTags
 }
 
-// get boolean flag for enabling/disabling the holdApplicationUntilProxyStarts behavior. This feature adds
+// Get boolean flag for enabling/disabling the holdApplicationUntilProxyStarts behavior. This feature adds
 // hooks to delay application startup until the pod proxy is ready to accept traffic, mitigating some
 // startup race conditions. Default value is ‘false’
 func GetNodeProxyConfigHoldApplicationUntilProxyStarts() bool {
