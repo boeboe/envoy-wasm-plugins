@@ -147,15 +147,15 @@ func GetNodeDynamicParams() string {
 // Identifies location of where either Envoy runs or where upstream hosts run
 //
 // https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/core/v3/base.proto#config-core-v3-locality
-type locality struct {
+type Locality struct {
 	region  string
 	zone    string
 	subzone string
 }
 
 // Get locality specifying where the Envoy instance is running
-func GetNodeLocality() locality {
-	result := locality{}
+func GetNodeLocality() Locality {
+	result := Locality{}
 
 	region, err := getPropertyString([]string{"node", "locality", "region"})
 	if err != nil {
@@ -214,15 +214,15 @@ func GetNodeUserAgentBuildVersion() map[string]string {
 // Version and identification for an Envoy extension
 //
 // https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/core/v3/base.proto#config-core-v3-extension
-type extension struct {
+type Extension struct {
 	name      string
 	category  string
 	type_urls []string
 }
 
 // Get list of extensions and their versions supported by the node
-func GetNodeExtensions() []extension {
-	result := make([]extension, 0)
+func GetNodeExtensions() []Extension {
+	result := make([]Extension, 0)
 	extensionsRawSlice, err := getPropertyByteSliceSlice([]string{"node", "extensions"})
 	if err != nil {
 		proxywasm.LogWarnf("failed reading node.extensions: %v", err)
@@ -230,7 +230,7 @@ func GetNodeExtensions() []extension {
 
 	for _, extensionRawSlice := range extensionsRawSlice {
 		extensionStringSlice := deserializeProtobufToStringSlice(extensionRawSlice)
-		extension := extension{}
+		extension := Extension{}
 		extension.name = string(extensionStringSlice[0])
 		extension.category = string(extensionStringSlice[1])
 		extenstionTypeUrls := []string{}
@@ -267,21 +267,21 @@ func GetNodeListeningAddresses() []string {
 }
 
 // Get cluster metadata
-func GetClusterMetadata() istioFilterMetadata {
+func GetClusterMetadata() IstioFilterMetadata {
 	return getIstioFilterMetadata([]string{"node", "cluster_metadata", "filter_metadata", "istio"})
 }
 
 // Get listener metadata
-func GetListenerMetadata() istioFilterMetadata {
+func GetListenerMetadata() IstioFilterMetadata {
 	return getIstioFilterMetadata([]string{"node", "listener_metadata", "filter_metadata", "istio"})
 }
 
 // Get route metadata
-func GetRouteMetadata() istioFilterMetadata {
+func GetRouteMetadata() IstioFilterMetadata {
 	return getIstioFilterMetadata([]string{"node", "route_metadata", "filter_metadata", "istio"})
 }
 
 // Get upstream host metadata
-func GetUpstreamHostMetadata() istioFilterMetadata {
+func GetUpstreamHostMetadata() IstioFilterMetadata {
 	return getIstioFilterMetadata([]string{"node", "upstream_host_metadata", "filter_metadata", "istio"})
 }

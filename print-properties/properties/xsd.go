@@ -19,7 +19,7 @@ func GetXdsClusterName() string {
 }
 
 // Get upstream cluster metadata
-func GetXdsClusterMetadata() istioFilterMetadata {
+func GetXdsClusterMetadata() IstioFilterMetadata {
 	return getIstioFilterMetadata([]string{"xds", "cluster_metadata", "filter_metadata", "istio"})
 }
 
@@ -35,12 +35,12 @@ func GetXdsRouteName() string {
 }
 
 // Get upstream route metadata
-func GetXdsRouteMetadata() istioFilterMetadata {
+func GetXdsRouteMetadata() IstioFilterMetadata {
 	return getIstioFilterMetadata([]string{"xds", "route_metadata", "filter_metadata", "istio"})
 }
 
 // Get upstream host metadata
-func GetXdsUpstreamHostMetadata() istioFilterMetadata {
+func GetXdsUpstreamHostMetadata() IstioFilterMetadata {
 	return getIstioFilterMetadata([]string{"xds", "upstream_host_metadata", "filter_metadata", "istio"})
 }
 

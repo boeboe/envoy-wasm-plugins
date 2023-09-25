@@ -14,12 +14,12 @@ import (
 // with later values for the same key overriding earlier values
 //
 // https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/core/v3/base.proto#config-core-v3-metadata
-type istioFilterMetadata struct {
+type IstioFilterMetadata struct {
 	config   string
-	services []istioService
+	services []IstioService
 }
 
-type istioService struct {
+type IstioService struct {
 	host      string
 	name      string
 	namespace string
@@ -42,8 +42,8 @@ type istioService struct {
 //			]
 //		 }
 //		}
-func getIstioFilterMetadata(path []string) istioFilterMetadata {
-	result := istioFilterMetadata{}
+func getIstioFilterMetadata(path []string) IstioFilterMetadata {
+	result := IstioFilterMetadata{}
 
 	config, err := getPropertyString(append(path, "config"))
 	if err != nil {
@@ -59,7 +59,7 @@ func getIstioFilterMetadata(path []string) istioFilterMetadata {
 	}
 
 	for _, service := range services {
-		istioService := istioService{}
+		istioService := IstioService{}
 		istioServiceMap := deserializeToStringMap(service)
 		istioService.host = istioServiceMap["host"]
 		istioService.name = istioServiceMap["name"]
