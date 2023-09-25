@@ -1,7 +1,7 @@
 package main
 
 import (
-	"wasm-minimal/properties"
+	"print-properties/properties"
 
 	"github.com/tetratelabs/proxy-wasm-go-sdk/proxywasm"
 	"github.com/tetratelabs/proxy-wasm-go-sdk/proxywasm/types"
