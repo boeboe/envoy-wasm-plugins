@@ -61,14 +61,14 @@ func getPropertTimestamp(path []string) (time.Time, error) {
 
 // Get complex property object as a map of byte slices
 // to be used when dealing with mixed type properties
-// func getPropertyByteSliceMap(path []string) (map[string][]byte, error) {
-// 	b, err := proxywasm.GetProperty(path)
-// 	if err != nil {
-// 		return nil, err
-// 	}
+func getPropertyByteSliceMap(path []string) (map[string][]byte, error) {
+	b, err := proxywasm.GetProperty(path)
+	if err != nil {
+		return nil, err
+	}
 
-// 	return deserializeToByteMap(b), nil
-// }
+	return deserializeToByteMap(b), nil
+}
 
 // Get complex property object as a map of string
 // to be used when dealing with string only type properties
@@ -167,27 +167,27 @@ func deserializeProtobufToStringSlice(data []byte) []string {
 // deserialize byte slice to key value map, used for mixed type maps
 //   - keys are always string
 //   - value are raw byte strings that need further parsing
-// func deserializeToByteMap(bs []byte) map[string][]byte {
-// 	numHeaders := binary.LittleEndian.Uint32(bs[0:4])
-// 	var sizeIndex = 4
-// 	var dataIndex = 4 + 4*2*int(numHeaders)
-// 	ret := make(map[string][]byte)
-// 	for i := 0; i < int(numHeaders); i++ {
-// 		keySize := int(binary.LittleEndian.Uint32(bs[sizeIndex : sizeIndex+4]))
-// 		sizeIndex += 4
-// 		keyPtr := bs[dataIndex : dataIndex+keySize]
-// 		key := *(*string)(unsafe.Pointer(&keyPtr))
-// 		dataIndex += keySize + 1
+func deserializeToByteMap(bs []byte) map[string][]byte {
+	numHeaders := binary.LittleEndian.Uint32(bs[0:4])
+	var sizeIndex = 4
+	var dataIndex = 4 + 4*2*int(numHeaders)
+	ret := make(map[string][]byte)
+	for i := 0; i < int(numHeaders); i++ {
+		keySize := int(binary.LittleEndian.Uint32(bs[sizeIndex : sizeIndex+4]))
+		sizeIndex += 4
+		keyPtr := bs[dataIndex : dataIndex+keySize]
+		key := *(*string)(unsafe.Pointer(&keyPtr))
+		dataIndex += keySize + 1
 
-// 		valueSize := int(binary.LittleEndian.Uint32(bs[sizeIndex : sizeIndex+4]))
-// 		sizeIndex += 4
-// 		valuePtr := bs[dataIndex : dataIndex+valueSize]
-// 		value := *(*[]byte)(unsafe.Pointer(&valuePtr))
-// 		dataIndex += valueSize + 1
-// 		ret[key] = value
-// 	}
-// 	return ret
-// }
+		valueSize := int(binary.LittleEndian.Uint32(bs[sizeIndex : sizeIndex+4]))
+		sizeIndex += 4
+		valuePtr := bs[dataIndex : dataIndex+valueSize]
+		value := *(*[]byte)(unsafe.Pointer(&valuePtr))
+		dataIndex += valueSize + 1
+		ret[key] = value
+	}
+	return ret
+}
 
 // deserialize byte array to key value map, used for string only type maps
 //   - keys are always string
