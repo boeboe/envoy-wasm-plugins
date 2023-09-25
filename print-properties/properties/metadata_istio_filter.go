@@ -15,14 +15,14 @@ import (
 //
 // https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/core/v3/base.proto#config-core-v3-metadata
 type IstioFilterMetadata struct {
-	config   string
-	services []IstioService
+	Config   string
+	Services []IstioService
 }
 
 type IstioService struct {
-	host      string
-	name      string
-	namespace string
+	Host      string
+	Name      string
+	Namespace string
 }
 
 // Helper function to parse filter metadata
@@ -48,9 +48,9 @@ func getIstioFilterMetadata(path []string) IstioFilterMetadata {
 	config, err := getPropertyString(append(path, "config"))
 	if err != nil {
 		proxywasm.LogWarnf("failed reading configuration attribute %v.config: %v", strings.Join(path, "."), err)
-		result.config = ""
+		result.Config = ""
 	} else {
-		result.config = config
+		result.Config = config
 	}
 
 	services, err := getPropertyByteSliceSlice(append(path, "services"))
@@ -61,10 +61,10 @@ func getIstioFilterMetadata(path []string) IstioFilterMetadata {
 	for _, service := range services {
 		istioService := IstioService{}
 		istioServiceMap := deserializeToStringMap(service)
-		istioService.host = istioServiceMap["host"]
-		istioService.name = istioServiceMap["name"]
-		istioService.namespace = istioServiceMap["namespace"]
-		result.services = append(result.services, istioService)
+		istioService.Host = istioServiceMap["host"]
+		istioService.Name = istioServiceMap["name"]
+		istioService.Namespace = istioServiceMap["namespace"]
+		result.Services = append(result.Services, istioService)
 	}
 
 	return result

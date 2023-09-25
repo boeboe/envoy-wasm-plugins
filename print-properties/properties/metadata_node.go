@@ -321,9 +321,9 @@ func GetNodeProxyConfigProxyAdminPort() int {
 //
 // https://istio.io/latest/docs/reference/config/istio.mesh.v1alpha1/#ProxyConfig-ProxyStatsMatcher
 type ProxyStatsMatcher struct {
-	inclusionPrefixes []string
-	inclusionRegexps  []string
-	inclusionSuffixes []string
+	InclusionPrefixes []string
+	InclusionRegexps  []string
+	InclusionSuffixes []string
 }
 
 // Get proxy stats matcher defines configuration for reporting custom Envoy stats. To reduce
@@ -350,9 +350,9 @@ func GetNodeProxyConfigProxyStatsMatcher() ProxyStatsMatcher {
 	}
 
 	return ProxyStatsMatcher{
-		inclusionPrefixes: inclusionPrefixes,
-		inclusionRegexps:  inclusionRegexps,
-		inclusionSuffixes: inclusionSuffixes,
+		InclusionPrefixes: inclusionPrefixes,
+		InclusionRegexps:  inclusionRegexps,
+		InclusionSuffixes: inclusionSuffixes,
 	}
 }
 

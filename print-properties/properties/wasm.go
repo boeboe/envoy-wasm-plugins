@@ -148,9 +148,9 @@ func GetNodeDynamicParams() string {
 //
 // https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/core/v3/base.proto#config-core-v3-locality
 type Locality struct {
-	region  string
-	zone    string
-	subzone string
+	Region  string
+	Zone    string
+	Subzone string
 }
 
 // Get locality specifying where the Envoy instance is running
@@ -160,21 +160,23 @@ func GetNodeLocality() Locality {
 	region, err := getPropertyString([]string{"node", "locality", "region"})
 	if err != nil {
 		proxywasm.LogWarnf("failed reading node.locality.region: %v", err)
-		result.region = ""
+		result.Region = ""
 	}
-	result.region = region
+	result.Region = region
 
 	zone, err := getPropertyString([]string{"node", "locality", "zone"})
 	if err != nil {
 		proxywasm.LogWarnf("failed reading node.locality.zone: %v", err)
+		result.Zone = ""
 	}
-	result.zone = zone
+	result.Zone = zone
 
 	subzone, err := getPropertyString([]string{"node", "locality", "subzone"})
 	if err != nil {
 		proxywasm.LogWarnf("failed reading node.locality.subzone: %v", err)
+		result.Subzone = ""
 	}
-	result.subzone = subzone
+	result.Subzone = subzone
 
 	return result
 }
@@ -215,9 +217,9 @@ func GetNodeUserAgentBuildVersion() map[string]string {
 //
 // https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/core/v3/base.proto#config-core-v3-extension
 type Extension struct {
-	name      string
-	category  string
-	type_urls []string
+	Name     string
+	Category string
+	TypeUrls []string
 }
 
 // Get list of extensions and their versions supported by the node
@@ -231,11 +233,11 @@ func GetNodeExtensions() []Extension {
 	for _, extensionRawSlice := range extensionsRawSlice {
 		extensionStringSlice := deserializeProtobufToStringSlice(extensionRawSlice)
 		extension := Extension{}
-		extension.name = string(extensionStringSlice[0])
-		extension.category = string(extensionStringSlice[1])
+		extension.Name = string(extensionStringSlice[0])
+		extension.Category = string(extensionStringSlice[1])
 		extenstionTypeUrls := []string{}
 		extenstionTypeUrls = append(extenstionTypeUrls, extensionStringSlice[2:]...)
-		extension.type_urls = extenstionTypeUrls
+		extension.TypeUrls = extenstionTypeUrls
 		result = append(result, extension)
 	}
 
