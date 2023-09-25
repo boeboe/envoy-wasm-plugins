@@ -66,15 +66,15 @@ func GetRouteName() string {
 // Identifies the direction of the traffic relative to the local Envoy
 //
 // https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/core/v3/base.proto#enum-config-core-v3-trafficdirection
-type trafficDirection int
+type TrafficDirection int
 
 const (
-	Unspecified trafficDirection = iota
+	Unspecified TrafficDirection = iota
 	Inbound
 	Outbound
 )
 
-func (t trafficDirection) String() string {
+func (t TrafficDirection) String() string {
 	switch t {
 	case Unspecified:
 		return "UNSPECIFIED"
@@ -89,17 +89,18 @@ func (t trafficDirection) String() string {
 // Get listener direction, an enum value of the listener traffic direction
 //
 // Possible values are:
+//
 //   - UNSPECIFIED: 0 (default option is unspecified)
 //   - INBOUND: 1 (⁣the transport is used for incoming traffic)
 //   - OUTBOUND: 2 (the transport is used for outgoing traffic)
-func GetListenerDirection() trafficDirection {
+func GetListenerDirection() TrafficDirection {
 	listenerDirection, err := getPropertyUint64([]string{"listener_direction"})
 	if err != nil {
 		proxywasm.LogWarnf("failed reading wasm attribute listener_direction: %v", err)
 		return 0
 	}
 
-	return trafficDirection(int(listenerDirection))
+	return TrafficDirection(int(listenerDirection))
 }
 
 // Get an opaque node identifier for the Envoy node. This also provides the local
