@@ -410,7 +410,27 @@ func GetNodeProxyConfigTerminationDrainDuration() string {
 	return terminationDrainDuration
 }
 
-// Get address of the Zipkin service (e.g. zipkin:9411)
+// Get address of the Datadog service (e.g. datadog-agent.sre.svc.cluster.local:8126)
+func GetNodeProxyConfigTracingDatadogAddress() string {
+	tracingDatadogAddress, err := getPropertyString([]string{"node", "metadata", "PROXY_CONFIG", "tracing", "datadog", "address"})
+	if err != nil {
+		proxywasm.LogWarnf("failed reading node.metadata.PROXY_CONFIG.tracing.datadog.address: %v", err)
+		return ""
+	}
+	return tracingDatadogAddress
+}
+
+// Get gRPC address for the OpenCensus agent (e.g. dns://authority/host:port or unix:path)
+func GetNodeProxyConfigTracingOpenCensusAgentAddress() string {
+	tracingOpenCensusAgentAddress, err := getPropertyString([]string{"node", "metadata", "PROXY_CONFIG", "tracing", "opencensusagent", "address"})
+	if err != nil {
+		proxywasm.LogWarnf("failed reading node.metadata.PROXY_CONFIG.tracing.opencensusagent.address: %v", err)
+		return ""
+	}
+	return tracingOpenCensusAgentAddress
+}
+
+// Get address of the Zipkin service (e.g. zipkin.sre.svc.cluster.local:9411)
 func GetNodeProxyConfigTracingZipkinAddress() string {
 	tracingZipkinAddress, err := getPropertyString([]string{"node", "metadata", "PROXY_CONFIG", "tracing", "zipkin", "address"})
 	if err != nil {
