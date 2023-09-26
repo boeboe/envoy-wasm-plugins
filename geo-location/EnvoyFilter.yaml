@@ -1,0 +1,60 @@
+apiVersion: networking.istio.io/v1alpha3
+kind: EnvoyFilter
+metadata:
+  name: wasm-geolocation-filter
+  namespace: istio-system
+spec:
+  workloadSelector:
+    labels:
+      app: your-app-label # Adjust this to target the desired workloads
+  configPatches:
+  # Wasm Service Configuration
+  - applyTo: BOOTSTRAP
+    patch:
+      operation: MERGE
+      value:
+        bootstrap_extensions:
+        - name: envoy.bootstrap.wasm
+          typed_config:
+            "@type": "type.googleapis.com/envoy.extensions.wasm.v3.WasmService"
+            singleton: true
+            config:
+              name: "geo_service"
+              configuration:
+                "@type": "type.googleapis.com/google.protobuf.StringValue"
+                value: |
+                  {
+                    "pollingInterval": "1h", # Polling interval, can be adjusted
+                    "dbURL": "https://path-to-your-db.com/dbfile"
+                  }
+              vm_config:
+                runtime: "envoy.wasm.runtime.v8"
+                code:
+                  local:
+                    filename: "/path/to/your/service.wasm"
+
+  # HTTP Filter Configuration
+  - applyTo: HTTP_FILTER
+    match:
+      context: SIDECAR_INBOUND
+      listener:
+        filterChain:
+          filter:
+            name: "envoy.http_connection_manager"
+    patch:
+      operation: INSERT_BEFORE
+      value:
+        name: "envoy.filters.http.wasm"
+        typed_config:
+          "@type": "type.googleapis.com/udpa.type.v1.TypedStruct"
+          type_url: "type.googleapis.com/envoy.extensions.filters.http.wasm.v3.Wasm"
+          value:
+            config:
+              name: "geo_http_filter"
+              root_id: "http_filter_root_id" # This should match the root_id in your HTTP filter code
+              configuration: "{}" # Any additional configuration for the HTTP filter
+              vm_config:
+                runtime: "envoy.wasm.runtime.v8"
+                code:
+                  local:
+                    filename: "/path/to/your/http_filter.wasm"

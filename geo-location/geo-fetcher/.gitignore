@@ -1,0 +1,3 @@
+ingress_config_dump*
+ingress_logs*
+*.wasm

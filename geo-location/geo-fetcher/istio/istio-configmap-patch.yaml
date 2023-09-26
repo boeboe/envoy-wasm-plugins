@@ -1,0 +1,5 @@
+data:
+  mesh: |-
+    defaultConfig:
+      proxyMetadata:
+        BOOTSTRAP_XDS_AGENT: "true"
