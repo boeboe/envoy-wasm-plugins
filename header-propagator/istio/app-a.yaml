@@ -1,0 +1,107 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  labels:
+    istio-injection: enabled
+  name: ns-a
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  labels:
+    app: app-a
+  name: sa-app-a
+  namespace: ns-a
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: app-a
+    version: v1
+  name: app-a-v1
+  namespace: ns-a
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: app-a
+      version: v1
+  template:
+    metadata:
+      labels:
+        app: app-a
+        version: v1
+    spec:
+      containers:
+        - args:
+            - '--log-output-level=all:debug'
+            - '--http-listen-address=:8000'
+            - '--ep-duration=0'
+            - '--ep-errors=0'
+            - '--ep-headers=0'
+            - '--zipkin-reporter-endpoint=http://zipkin.istio-system.svc.cluster.local:9411/api/v2/spans'
+            - '--zipkin-sample-rate=0.0'
+            - '--zipkin-singlehost-spans'
+          env:
+            - name: SVCNAME
+              value: app-a
+          image: nacx/obs-tester-server:1.2
+          imagePullPolicy: IfNotPresent
+          name: obs-tester
+          ports:
+            - containerPort: 8000
+              name: http
+          resources:
+            limits:
+              cpu: 128m
+              memory: 64Mi
+      serviceAccountName: sa-app-a
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: app-a
+    service: app-a
+  name: app-a
+  namespace: ns-a
+spec:
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8000
+  selector:
+    app: app-a
+---
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: app-a-vs
+  namespace: ns-a
+spec:
+  gateways:
+    - istio-ingress/propagate-gateway
+  hosts:
+    - app-a.ns-a.svc.cluster.local
+  http:
+    - match:
+        - uri:
+            prefix: /
+      route:
+        - destination:
+            host: app-a.ns-a.svc.cluster.local
+            port:
+              number: 80
+---
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: app-a-dr
+  namespace: ns-a
+spec:
+  host: app-a.ns-a.svc.cluster.local
+  trafficPolicy:
+    tls:
+      mode: ISTIO_MUTUAL

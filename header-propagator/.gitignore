@@ -1,0 +1,9 @@
+*.wasm
+app_a_config_dump*
+app_a_logs*
+app_b_config_dump*
+app_b_logs*
+httpbin_config_dump*
+httpbin_logs*
+ingress_config_dump*
+ingress_logs*

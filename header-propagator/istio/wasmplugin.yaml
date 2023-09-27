@@ -1,0 +1,22 @@
+---
+apiVersion: extensions.istio.io/v1alpha1
+kind: WasmPlugin
+metadata:
+  name: header-propagator
+  namespace: istio-ingress
+spec:
+  imagePullPolicy: Always
+  phase: AUTHN
+  pluginConfig:
+    test_plugin_config_var: test_plugin_config_value
+  pluginName: header-propagator
+  selector:
+    matchLabels:
+      istio: ingress
+  url: oci://docker.io/boeboe/envoy-wasm-plugins:header-propagator-0.1
+  vmConfig:
+    env:
+      - name: POD_NAME
+        valueFrom: HOST
+      - name: TEST_ENV_VAR
+        value: testEnvValue

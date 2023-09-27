@@ -1,0 +1,37 @@
+---
+apiVersion: networking.istio.io/v1beta1
+kind: Gateway
+metadata:
+  name: propagate-gateway
+  namespace: istio-ingress
+spec:
+  selector:
+    istio: ingress
+  servers:
+    - hosts:
+        - propagate.tetrate.io
+      port:
+        name: http-propagate
+        number: 80
+        protocol: HTTP
+
+---
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: propagate-vs
+  namespace: istio-ingress
+spec:
+  gateways:
+    - istio-ingress/propagate-gateway
+  hosts:
+    - propagate.tetrate.io
+  http:
+    - match:
+        - uri:
+            prefix: /
+      route:
+        - destination:
+            host: app-a.ns-a.svc.cluster.local
+            port:
+              number: 80

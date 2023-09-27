@@ -1,0 +1,90 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  labels:
+    istio-injection: enabled
+  name: ns-httpbin
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  labels:
+    app: httpbin
+  name: sa-httpbin
+  namespace: ns-httpbin
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: httpbin
+    version: v1
+  name: httpbin-v1
+  namespace: ns-httpbin
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: httpbin
+      version: v1
+  template:
+    metadata:
+      labels:
+        app: httpbin
+        version: v1
+    spec:
+      containers:
+        - image: kennethreitz/httpbin
+          imagePullPolicy: IfNotPresent
+          name: httpbin-container
+          ports:
+            - containerPort: 80
+              name: http
+          resources:
+            limits:
+              cpu: 128m
+              memory: 64Mi
+      serviceAccountName: sa-httpbin
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: httpbin
+  namespace: ns-httpbin
+spec:
+  ports:
+    - name: http
+      port: 80
+      targetPort: 80
+  selector:
+    app: httpbin
+---
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: httpbin-vs
+  namespace: ns-httpbin
+spec:
+  hosts:
+    - httpbin.ns-httpbin.svc.cluster.local
+  http:
+    - match:
+        - uri:
+            prefix: /
+      route:
+        - destination:
+            host: httpbin.ns-httpbin.svc.cluster.local
+            port:
+              number: 80
+---    
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: httpbin-dr
+  namespace: ns-httpbin
+spec:
+  host: httpbin.ns-httpbin.svc.cluster.local
+  trafficPolicy:
+    tls:
+      mode: ISTIO_MUTUAL

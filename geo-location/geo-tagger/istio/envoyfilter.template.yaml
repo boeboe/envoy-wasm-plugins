@@ -7,7 +7,7 @@ spec:
   configPatches:
   - applyTo: EXTENSION_CONFIG
     patch:
-      operation: ADD
+      operation: MERGE
       value:
         name: wasm-geo-tagger
         typed_config:

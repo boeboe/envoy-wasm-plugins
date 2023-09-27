@@ -1,0 +1,102 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  labels:
+    istio-injection: enabled
+  name: ns-b
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  labels:
+    app: app-b
+  name: sa-app-b
+  namespace: ns-b
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: app-b
+    version: v1
+  name: app-b-v1
+  namespace: ns-b
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: app-b
+      version: v1
+  template:
+    metadata:
+      labels:
+        app: app-b
+        version: v1
+    spec:
+      containers:
+        - args:
+            - '--log-output-level=all:debug'
+            - '--http-listen-address=:8000'
+            - '--ep-duration=0'
+            - '--ep-errors=0'
+            - '--ep-headers=0'
+          env:
+            - name: SVCNAME
+              value: app-b
+          image: nacx/obs-tester-server:1.2
+          imagePullPolicy: IfNotPresent
+          name: obs-tester
+          ports:
+            - containerPort: 8000
+              name: http
+          resources:
+            limits:
+              cpu: 128m
+              memory: 64Mi
+      serviceAccountName: sa-app-b
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: app-b
+    service: app-b
+  name: app-b
+  namespace: ns-b
+spec:
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8000
+  selector:
+    app: app-b
+---
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: app-b-vs
+  namespace: ns-b
+spec:
+  hosts:
+    - app-b.ns-b.svc.cluster.local
+  http:
+    - match:
+        - uri:
+            prefix: /
+      route:
+        - destination:
+            host: app-b.ns-b.svc.cluster.local
+            port:
+              number: 80
+---
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: app-b-dr
+  namespace: ns-b
+spec:
+  host: app-b.ns-b.svc.cluster.local
+  trafficPolicy:
+    tls:
+      mode: ISTIO_MUTUAL
