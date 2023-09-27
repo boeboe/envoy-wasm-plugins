@@ -3,10 +3,15 @@ package main
 import (
 	"github.com/tetratelabs/proxy-wasm-go-sdk/proxywasm"
 	"github.com/tetratelabs/proxy-wasm-go-sdk/proxywasm/types"
+
+	"geo-tagger/utils"
 )
 
-const geoDBKey = "geolocation_db"
-const geoDBUpdateQueue = "geolocation_update_queue"
+const (
+	geoDBKey         = "geolocation_db"
+	geoDBUpdateQueue = "geolocation_update_queue"
+	geoDBFetcherVMID = "geo-fetcher"
+)
 
 // vmContext is the main context for the VM.
 type vmContext struct {
@@ -41,7 +46,7 @@ func (ctx *pluginContext) OnPluginStart(pluginConfigurationSize int) types.OnPlu
 	proxywasm.LogInfof("successfully read shared data of size: %d", len(data))
 
 	// Register to the shared queue
-	queueID, err := proxywasm.RegisterSharedQueue(geoDBUpdateQueue)
+	queueID, err := proxywasm.ResolveSharedQueue(geoDBFetcherVMID, geoDBUpdateQueue)
 	if err != nil {
 		proxywasm.LogCriticalf("failed to register shared queue: %v", err)
 		return types.OnPluginStartStatusFailed
@@ -58,7 +63,7 @@ func (ctx *pluginContext) OnQueueReady(queueID uint32) {
 	for {
 		data, err := proxywasm.DequeueSharedQueue(ctx.queueID)
 		if err != nil {
-			if err == types.ErrorStatusNotFound {
+			if err == types.ErrorStatusEmpty {
 				// No more data in the queue
 				break
 			}
@@ -67,7 +72,7 @@ func (ctx *pluginContext) OnQueueReady(queueID uint32) {
 		}
 
 		if string(data) == "update_available" {
-			geoData, _, err := proxywasm.GetSharedData(geoDBKey)
+			geoData, _, err := utils.GetSharedDataSafe(geoDBKey)
 			if err != nil {
 				proxywasm.LogErrorf("error reading updated shared data: %v", err)
 				return

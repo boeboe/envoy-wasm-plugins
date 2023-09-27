@@ -6,14 +6,21 @@ import (
 	"fmt"
 	"io"
 
+	"geo-fetcher/utils"
+
 	"github.com/tetratelabs/proxy-wasm-go-sdk/proxywasm"
 	"github.com/tetratelabs/proxy-wasm-go-sdk/proxywasm/types"
 
 	"github.com/tidwall/gjson"
 )
 
-const geoDBKey = "geolocation_db"
-const geoDBUpdateQueue = "geolocation_update_queue"
+const (
+	geoDBKey             = "geolocation_db"
+	geoDBUpdateQueue     = "geolocation_update_queue"
+	sharedDataPadByte    = byte(0) // Default padding byte is 0
+	sharedDataTargetSize = 8       // Desired length or its multiple for the byte slice
+	geoDBTaggerVMID      = "geo-tagger"
+)
 
 // vmContext is the main context for the VM.
 type vmContext struct {
@@ -62,7 +69,7 @@ func (ctx *pluginContext) OnPluginStart(pluginConfigurationSize int) types.OnPlu
 	proxywasm.LogInfof("successfully parsed plugin configuration: %+v", config)
 
 	// Initialize the shared data with an empty value
-	err = proxywasm.SetSharedData(geoDBKey, padToCorrectLength([]byte{}), 0)
+	err = utils.SetSharedDataSafe(geoDBKey, []byte{}, 0)
 	if err != nil {
 		proxywasm.LogCriticalf("failed to initialize shared data: %v", err)
 		return types.OnPluginStartStatusFailed
@@ -88,29 +95,6 @@ func (ctx *pluginContext) OnPluginStart(pluginConfigurationSize int) types.OnPlu
 	return types.OnPluginStartStatusOK
 }
 
-const (
-	sharedDataPadByte    = byte(0) // Default padding byte is 0
-	sharedDataTargetSize = 8       // Desired length or its multiple for the byte slice
-)
-
-// PadToCorrectLength prepares a byte slice such that its length is a multiple of the desired
-// targetSize (in this case 8). This is done by padding the byte slice with a specified padByte.
-func padToCorrectLength(data []byte) []byte {
-	if len(data) == 0 {
-		return make([]byte, sharedDataTargetSize)
-	}
-	padding := len(data) % sharedDataTargetSize
-	if padding != 0 {
-		padding = sharedDataTargetSize - padding
-	}
-	paddedData := make([]byte, len(data)+padding)
-	copy(paddedData, data)
-	for i := len(data); i < len(paddedData); i++ {
-		paddedData[i] = sharedDataPadByte
-	}
-	return paddedData
-}
-
 // parseGeoServiceConfiguration parses the configuration for the Geo service.
 func parseGeoServiceConfiguration(data []byte) (geoFetchConfig, error) {
 	if len(data) == 0 {
@@ -129,22 +113,11 @@ func parseGeoServiceConfiguration(data []byte) (geoFetchConfig, error) {
 // OnTick is called periodically based on the tick period set.
 func (ctx *pluginContext) OnTick() {
 	// Fetch the GeoDB data on every tick
-	data, err := ctx.fetchGeoDB()
-	if err != nil {
-		proxywasm.LogErrorf("failed to fetch GeoDB: %v", err)
-		return
-	}
-	proxywasm.LogInfo("successfully fetched GeoDB")
-	if err := ctx.storeInSharedMemory(data); err != nil {
-		proxywasm.LogErrorf("failed to store data in shared memory: %v", err)
-		return
-	}
-	proxywasm.LogInfof("successfully stored data of size %v in shared memory", len(data))
-	ctx.notifyHTTPFilter()
+	ctx.fetchGeoDB()
 }
 
 // fetchGeoDB fetches the GeoDB data from the provided URL.
-func (ctx *pluginContext) fetchGeoDB() ([]byte, error) {
+func (ctx *pluginContext) fetchGeoDB() {
 	headers := [][2]string{
 		{":authority", "download.db-ip.com"},
 		{":method", "GET"},
@@ -152,13 +125,20 @@ func (ctx *pluginContext) fetchGeoDB() ([]byte, error) {
 		{":scheme", "https"},
 	}
 
-	var fetchedData []byte
 	callback := func(numHeaders, bodySize, numTrailers int) {
 		body, err := proxywasm.GetHttpCallResponseBody(0, bodySize)
 		if err != nil {
 			proxywasm.LogErrorf("failed to get response body: %v", err)
 			return
 		}
+		proxywasm.LogInfof("fetchGeoDB response body size: %v", len(body))
+
+		headers, err := proxywasm.GetHttpCallResponseHeaders()
+		if err != nil {
+			proxywasm.LogErrorf("failed to get response headers: %v", err)
+			return
+		}
+		proxywasm.LogInfof("fetchGeoDB response headers: %+v", headers)
 
 		// Decompress the gzipped data
 		gz, err := gzip.NewReader(bytes.NewReader(body))
@@ -168,24 +148,28 @@ func (ctx *pluginContext) fetchGeoDB() ([]byte, error) {
 		}
 		defer gz.Close()
 
-		fetchedData, err = io.ReadAll(gz)
+		extractedData, err := io.ReadAll(gz)
 		if err != nil {
 			proxywasm.LogErrorf("failed to read gzipped data: %v", err)
 		}
-		proxywasm.LogInfof("successfully read gzipped data of size: %v", len(fetchedData))
+		proxywasm.LogInfof("successfully read gzipped data of size: %v", len(extractedData))
+
+		if err := ctx.storeInSharedMemory(extractedData); err != nil {
+			proxywasm.LogErrorf("failed to store data in shared memory: %v", err)
+			return
+		}
+		proxywasm.LogInfof("successfully stored data of size %v in shared memory", len(extractedData))
+		ctx.notifyHTTPFilter()
 	}
 
 	if _, err := proxywasm.DispatchHttpCall("db-ip", headers, nil, nil, 5000, callback); err != nil {
 		proxywasm.LogCriticalf("dispatch httpcall failed: %v", err)
-		return nil, err
 	}
-
-	return fetchedData, nil
 }
 
 // storeInSharedMemory stores the fetched data in shared memory.
 func (ctx *pluginContext) storeInSharedMemory(data []byte) error {
-	err := proxywasm.SetSharedData(geoDBKey, padToCorrectLength(data), 0)
+	err := utils.SetSharedDataSafe(geoDBKey, data, 0)
 	if err != nil {
 		return fmt.Errorf("failed to set shared data: %v", err)
 	}

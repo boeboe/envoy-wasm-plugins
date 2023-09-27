@@ -24,9 +24,10 @@ spec:
                 value: |
                   {
                     "geo_db_url_path": "/free/dbip-country-lite-2023-09.mmdb.gz",
-                    "polling_interval": 30000
+                    "polling_interval": 60000
                   }
               vm_config:
+                vm_id: geo-fetcher
                 runtime: "envoy.wasm.runtime.v8"
                 code:
                   remote:
