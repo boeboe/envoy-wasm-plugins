@@ -2,7 +2,7 @@
 apiVersion: networking.istio.io/v1alpha3
 kind: EnvoyFilter
 metadata:
-  name: wasm-geo-tagger
+  name: wasm-repo
   namespace: istio-ingress
 spec:
   configPatches:
