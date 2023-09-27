@@ -48,6 +48,7 @@ docker-push:
 	docker push $(HUB)/$(NAME):$(TAG)
 
 deploy:
+	kubectl apply -f istio/zipkin.yaml
 	kubectl apply -f istio/gateway.yaml
 	kubectl apply -f istio/app-a.yaml
 	kubectl apply -f istio/app-b.yaml
@@ -86,6 +87,6 @@ enable-wasm-debug:
 
 curl:
 	@echo "Single request..."
-	@echo curl -v -H \"X-B3-Sampled: 1\" --resolve \"propagate.tetrate.io:80:$$(kubectl get services --namespace istio-ingress istio-ingress --output jsonpath='{.status.loadBalancer.ingress[0].ip}')\" \"http://propagate.tetrate.io/proxy/app-b.ns-b/proxy/httpbin.ns-httpbin/headers\"
+	@echo curl -v -H \"X-B3-Sampled: 1\" -H \"X-B3-Traceid: $(openssl rand -hex 16)\" --resolve \"propagate.tetrate.io:80:$$(kubectl get services --namespace istio-ingress istio-ingress --output jsonpath='{.status.loadBalancer.ingress[0].ip}')\" \"http://propagate.tetrate.io/proxy/app-b.ns-b/proxy/httpbin.ns-httpbin/headers\"
 	@echo "Executing in a loop..."
-	@echo "while true; do curl -v -H \"X-B3-Sampled: 1\" --resolve \"propagate.tetrate.io:80:$$(kubectl get services --namespace istio-ingress istio-ingress --output jsonpath='{.status.loadBalancer.ingress[0].ip}')\" \"http://propagate.tetrate.io/proxy/app-b.ns-b/proxy/httpbin.ns-httpbin/headers\" ; sleep 1 ; done"
+	@echo "while true; do curl -v -H \"X-B3-Sampled: 1\" -H \"X-B3-Traceid: $(openssl rand -hex 16)\" --resolve \"propagate.tetrate.io:80:$$(kubectl get services --namespace istio-ingress istio-ingress --output jsonpath='{.status.loadBalancer.ingress[0].ip}')\" \"http://propagate.tetrate.io/proxy/app-b.ns-b/proxy/httpbin.ns-httpbin/headers\" ; sleep 1 ; done"

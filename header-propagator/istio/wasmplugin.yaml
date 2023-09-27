@@ -8,7 +8,7 @@ spec:
   imagePullPolicy: Always
   phase: AUTHN
   pluginConfig:
-    test_plugin_config_var: test_plugin_config_value
+    correlationHeaders: test_plugin_config_value
   pluginName: header-propagator
   selector:
     matchLabels:

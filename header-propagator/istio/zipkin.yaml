@@ -1,0 +1,41 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: zipkin
+  name: zipkin
+  namespace: istio-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: zipkin
+  template:
+    metadata:
+      labels:
+        app: zipkin
+    spec:
+      containers:
+        - image: openzipkin/zipkin
+          name: zipkin
+          ports:
+            - containerPort: 9411
+          resources:
+            limits:
+              cpu: 512m
+              memory: 256Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: zipkin
+  namespace: istio-system
+spec:
+  ports:
+    - name: zipkin
+      port: 9411
+      targetPort: 9411
+  selector:
+    app: zipkin
+  type: LoadBalancer
