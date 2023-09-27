@@ -1,7 +1,7 @@
 apiVersion: networking.istio.io/v1alpha3
 kind: EnvoyFilter
 metadata:
-  name: wasm-geo-service
+  name: wasm-geo-fetcher
   namespace: istio-ingress
 spec:
   configPatches:
@@ -17,8 +17,8 @@ spec:
             "@type": type.googleapis.com/envoy.extensions.wasm.v3.WasmService
             singleton: true
             config:
-              name: geo-service-plugin
-              root_id: geo_service_root_id
+              name: wasm-geo-fetcher
+              root_id: wasm-geo-fetcher-root-id
               configuration:
                 "@type": type.googleapis.com/google.protobuf.StringValue
                 value: |
@@ -34,7 +34,7 @@ spec:
                       uri: "http://wasm-repo.istio-ingress.svc.cluster.local/wasm-plugins/geo-fetcher-0.1.wasm"
                       timeout: 600s
                       cluster: "wasm-repo"
-                    sha256: "7bc608edff02465abb1233a1a785e9ed780cef4bdcd520c2ac446c200b085d3f"
+                    sha256: "${wasm_plugin_sha256}"
   - applyTo: BOOTSTRAP
     patch:
       operation: MERGE

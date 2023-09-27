@@ -1,0 +1,43 @@
+apiVersion: networking.istio.io/v1alpha3
+kind: EnvoyFilter
+metadata:
+  name: wasm-geo-tagger
+  namespace: istio-ingress
+spec:
+  configPatches:
+  - applyTo: EXTENSION_CONFIG
+    patch:
+      operation: ADD
+      value:
+        name: wasm-geo-tagger
+        typed_config:
+         "@type": type.googleapis.com/udpa.type.v1.TypedStruct
+         type_url: type.googleapis.com/envoy.extensions.filters.http.wasm.v3.Wasm
+         value:
+           config:
+             configuration: {}
+             vm_config:
+                runtime: "envoy.wasm.runtime.v8"
+                code:
+                  remote:
+                    http_uri:
+                      uri: "http://wasm-repo.istio-ingress.svc.cluster.local/wasm-plugins/geo-tagger-0.1.wasm"
+                      timeout: 600s
+                      cluster: "wasm-repo"
+                    sha256: "${wasm_plugin_sha256}"
+  - applyTo: HTTP_FILTER
+    match:
+      listener:
+        filterChain:
+          filter:
+            name: envoy.filters.network.http_connection_manager
+            subFilter:
+              name: envoy.filters.http.router
+    patch:
+      operation: INSERT_BEFORE
+      value:
+        name: wasm-geo-tagger # This must match the name above
+        config_discovery:
+          config_source:
+            ads: {}
+          type_urls: ["type.googleapis.com/envoy.extensions.filters.http.wasm.v3.Wasm"]

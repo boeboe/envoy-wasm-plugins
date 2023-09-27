@@ -50,6 +50,7 @@ func (ctx *pluginContext) OnPluginStart(pluginConfigurationSize int) types.OnPlu
 		proxywasm.LogCriticalf("error reading plugin configuration: %v", err)
 		return types.OnPluginStartStatusFailed
 	}
+	proxywasm.LogInfo("successfully read plugin configuration")
 
 	// Parse the configuration data
 	config, err := parseGeoServiceConfiguration(data)
@@ -58,13 +59,15 @@ func (ctx *pluginContext) OnPluginStart(pluginConfigurationSize int) types.OnPlu
 		return types.OnPluginStartStatusFailed
 	}
 	ctx.config = config
+	proxywasm.LogInfof("successfully parsed plugin configuration: %+v", config)
 
 	// Initialize the shared data with an empty value
-	err = proxywasm.SetSharedData(geoDBKey, []byte{}, 0)
+	err = proxywasm.SetSharedData(geoDBKey, padToCorrectLength([]byte{}), 0)
 	if err != nil {
 		proxywasm.LogCriticalf("failed to initialize shared data: %v", err)
 		return types.OnPluginStartStatusFailed
 	}
+	proxywasm.LogInfof("successfully initialize shared data with key: %v", geoDBKey)
 
 	// Register the shared queue here
 	queueID, err := proxywasm.RegisterSharedQueue(geoDBUpdateQueue)
@@ -73,14 +76,39 @@ func (ctx *pluginContext) OnPluginStart(pluginConfigurationSize int) types.OnPlu
 		return types.OnPluginStartStatusFailed
 	}
 	ctx.queueID = queueID
+	proxywasm.LogInfof("successfully register shared queue: %v", geoDBUpdateQueue)
 
 	// Set the tick period for periodic tasks
 	if err := proxywasm.SetTickPeriodMilliSeconds(config.PollingInterval); err != nil {
 		proxywasm.LogCriticalf("failed to set tick period: %v", err)
 		return types.OnPluginStartStatusFailed
 	}
+	proxywasm.LogInfof("successfully set tick period milliseconds: %d", config.PollingInterval)
 
 	return types.OnPluginStartStatusOK
+}
+
+const (
+	sharedDataPadByte    = byte(0) // Default padding byte is 0
+	sharedDataTargetSize = 8       // Desired length or its multiple for the byte slice
+)
+
+// PadToCorrectLength prepares a byte slice such that its length is a multiple of the desired
+// targetSize (in this case 8). This is done by padding the byte slice with a specified padByte.
+func padToCorrectLength(data []byte) []byte {
+	if len(data) == 0 {
+		return make([]byte, sharedDataTargetSize)
+	}
+	padding := len(data) % sharedDataTargetSize
+	if padding != 0 {
+		padding = sharedDataTargetSize - padding
+	}
+	paddedData := make([]byte, len(data)+padding)
+	copy(paddedData, data)
+	for i := len(data); i < len(paddedData); i++ {
+		paddedData[i] = sharedDataPadByte
+	}
+	return paddedData
 }
 
 // parseGeoServiceConfiguration parses the configuration for the Geo service.
@@ -88,11 +116,9 @@ func parseGeoServiceConfiguration(data []byte) (geoFetchConfig, error) {
 	if len(data) == 0 {
 		return geoFetchConfig{}, nil
 	}
-
 	if !gjson.ValidBytes(data) {
 		return geoFetchConfig{}, fmt.Errorf("the plugin configuration is not a valid json: %q", string(data))
 	}
-
 	jsonData := gjson.ParseBytes(data)
 	return geoFetchConfig{
 		PollingInterval: uint32(jsonData.Get("polling_interval").Uint()),
@@ -108,19 +134,22 @@ func (ctx *pluginContext) OnTick() {
 		proxywasm.LogErrorf("failed to fetch GeoDB: %v", err)
 		return
 	}
+	proxywasm.LogInfo("successfully fetched GeoDB")
 	if err := ctx.storeInSharedMemory(data); err != nil {
 		proxywasm.LogErrorf("failed to store data in shared memory: %v", err)
 		return
 	}
+	proxywasm.LogInfof("successfully stored data of size %v in shared memory", len(data))
 	ctx.notifyHTTPFilter()
 }
 
 // fetchGeoDB fetches the GeoDB data from the provided URL.
 func (ctx *pluginContext) fetchGeoDB() ([]byte, error) {
 	headers := [][2]string{
-		{":method", "GET"},
 		{":authority", "download.db-ip.com"},
+		{":method", "GET"},
 		{":path", ctx.config.GeoDBURLPath},
+		{":scheme", "https"},
 	}
 
 	var fetchedData []byte
@@ -143,9 +172,10 @@ func (ctx *pluginContext) fetchGeoDB() ([]byte, error) {
 		if err != nil {
 			proxywasm.LogErrorf("failed to read gzipped data: %v", err)
 		}
+		proxywasm.LogInfof("successfully read gzipped data of size: %v", len(fetchedData))
 	}
 
-	if _, err := proxywasm.DispatchHttpCall("web_service", headers, nil, nil, 5000, callback); err != nil {
+	if _, err := proxywasm.DispatchHttpCall("db-ip", headers, nil, nil, 5000, callback); err != nil {
 		proxywasm.LogCriticalf("dispatch httpcall failed: %v", err)
 		return nil, err
 	}
@@ -155,7 +185,7 @@ func (ctx *pluginContext) fetchGeoDB() ([]byte, error) {
 
 // storeInSharedMemory stores the fetched data in shared memory.
 func (ctx *pluginContext) storeInSharedMemory(data []byte) error {
-	err := proxywasm.SetSharedData(geoDBKey, data, 0)
+	err := proxywasm.SetSharedData(geoDBKey, padToCorrectLength(data), 0)
 	if err != nil {
 		return fmt.Errorf("failed to set shared data: %v", err)
 	}

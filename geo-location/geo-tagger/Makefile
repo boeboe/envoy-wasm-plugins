@@ -20,7 +20,7 @@ NAME := envoy-wasm-plugins
 WASM := $(NAME).wasm
 
 OUT := $(WASM)
-TAG  ?= geo-fetcher-0.1
+TAG  ?= geo-tagger-0.1
 HUB  ?= docker.io/boeboe
 REPO ?= boeboe/envoy-wasm-plugins
 

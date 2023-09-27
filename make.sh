@@ -38,16 +38,22 @@ if [[ $1 = "istio-up" ]]; then
 		${HELM} upgrade istio-base tetratelabs/base -n istio-system --version ${ISTIO_VERSION} --wait
 	fi
 	if ! $(${HELM} ls -n istio-system | grep -q istiod) ; then 
+		# ${HELM} install istiod tetratelabs/istiod -n istio-system --version ${ISTIO_VERSION} --set values.global.proxy.logLevel=debug --wait
 		${HELM} install istiod tetratelabs/istiod -n istio-system --version ${ISTIO_VERSION} --wait
 	else
+		# ${HELM} upgrade istiod tetratelabs/istiod -n istio-system --version ${ISTIO_VERSION} --set values.global.proxy.logLevel=debug --wait
 		${HELM} upgrade istiod tetratelabs/istiod -n istio-system --version ${ISTIO_VERSION} --wait
 	fi
 	if ! $(${HELM} ls -n istio-ingress | grep -q istio-ingress) ; then 
+		# ${HELM} install istio-ingress tetratelabs/gateway -n istio-ingress --create-namespace --version ${ISTIO_VERSION} --wait \
+		# 	--set podAnnotations."sidecar\.istio\.io/logLevel"=debug --set podAnnotations."sidecar\.istio\.io/componentLogLevel"="wasm:debug" --set labels.istio-locality=region1 
 		${HELM} install istio-ingress tetratelabs/gateway -n istio-ingress --create-namespace --version ${ISTIO_VERSION} --wait \
-			--set labels.istio-locality=region1
+			--set labels.istio-locality=region1 --set podAnnotations."sidecar\.istio\.io/componentLogLevel"="wasm:debug"
 	else
+		# ${HELM} upgrade istio-ingress tetratelabs/gateway -n istio-ingress --version ${ISTIO_VERSION} --wait \
+		# 	--set podAnnotations."sidecar\.istio\.io/logLevel"=debug --set podAnnotations."sidecar\.istio\.io/componentLogLevel"="wasm:debug" --set labels.istio-locality=region1 
 		${HELM} upgrade istio-ingress tetratelabs/gateway -n istio-ingress --version ${ISTIO_VERSION} --wait \
-			--set labels.istio-locality=region1
+			--set labels.istio-locality=region1 --set podAnnotations."sidecar\.istio\.io/componentLogLevel"="wasm:debug"
 	fi
 
   exit 0
