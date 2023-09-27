@@ -27,6 +27,8 @@ EOF
 	${KUBECTL} label node ${NODE_NAME} topology.kubernetes.io/region=region1 --overwrite=true ;
 	${KUBECTL} label node ${NODE_NAME} topology.kubernetes.io/zone=zone1a --overwrite=true ;
 	${KUBECTL} label node ${NODE_NAME} topology.istio.io/subzone=subzone1a1 --overwrite=true ;
+
+	${KUBECTL} apply -f kubernetes/wasm-repo.yaml
   exit 0
 fi
 
@@ -55,6 +57,8 @@ if [[ $1 = "istio-up" ]]; then
 		${HELM} upgrade istio-ingress tetratelabs/gateway -n istio-ingress --version ${ISTIO_VERSION} --wait \
 			--set labels.istio-locality=region1 --set podAnnotations."sidecar\.istio\.io/componentLogLevel"="wasm:debug"
 	fi
+
+	${KUBECTL} apply -f kubernetes/wasm-repo-cluster.yaml
 
   exit 0
 fi

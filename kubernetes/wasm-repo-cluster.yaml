@@ -1,0 +1,26 @@
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: EnvoyFilter
+metadata:
+  name: wasm-geo-tagger
+  namespace: istio-ingress
+spec:
+  configPatches:
+  - applyTo: BOOTSTRAP
+    patch:
+      operation: MERGE
+      value:
+        static_resources:
+          clusters:
+          - name: "wasm-repo"
+            connect_timeout: "60s"
+            type: LOGICAL_DNS
+            load_assignment:
+              cluster_name: "wasm-repo"
+              endpoints:
+              - lb_endpoints:
+                - endpoint:
+                    address:
+                      socket_address:
+                        address: wasm-repo.wasm-repo.svc.cluster.local
+                        port_value: 80

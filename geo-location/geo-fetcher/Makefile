@@ -43,15 +43,11 @@ lint:
 clean:
 	rm -f *.wasm
 
-wasm-repo:
-	@echo "Deploying local wasm-repo"
-	kubectl apply -f istio/wasm-repo.yaml
-
-release-local: $(OUT) wasm-repo
+release-local: $(OUT)
 	@echo "Releasing $(TAG) into the local wasm-repo..."
-	curl --resolve "wasm-repo.tetrate.io:80:$$(kubectl get services --namespace istio-ingress istio-ingress --output jsonpath='{.status.loadBalancer.ingress[0].ip}')" -X POST -F "file=@$(OUT)" http://wasm-repo.tetrate.io/wasm-plugins/$(TAG).wasm
+	curl --resolve "wasm-repo.tetrate.io:80:$$(kubectl get services --namespace wasm-repo wasm-repo --output jsonpath='{.status.loadBalancer.ingress[0].ip}')" -X POST -F "file=@$(OUT)" http://wasm-repo.tetrate.io/wasm-plugins/$(TAG).wasm
 	@echo "\nAvailable plugins: "
-	curl --resolve "wasm-repo.tetrate.io:80:$$(kubectl get services --namespace istio-ingress istio-ingress --output jsonpath='{.status.loadBalancer.ingress[0].ip}')" http://wasm-repo.tetrate.io/list
+	curl --resolve "wasm-repo.tetrate.io:80:$$(kubectl get services --namespace wasm-repo wasm-repo --output jsonpath='{.status.loadBalancer.ingress[0].ip}')" http://wasm-repo.tetrate.io/list
 
 release-github: $(OUT)
 	@echo "Checking if release $(TAG) already exists..."

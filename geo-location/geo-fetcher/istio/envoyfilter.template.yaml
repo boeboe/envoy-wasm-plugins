@@ -32,7 +32,7 @@ spec:
                 code:
                   remote:
                     http_uri:
-                      uri: "http://wasm-repo.istio-ingress.svc.cluster.local/wasm-plugins/geo-fetcher-0.1.wasm"
+                      uri: "http://wasm-repo.wasm-repo.svc.cluster.local/wasm-plugins/geo-fetcher-0.1.wasm"
                       timeout: 600s
                       cluster: "wasm-repo"
                     sha256: "${wasm_plugin_sha256}"
@@ -42,18 +42,6 @@ spec:
       value:
         static_resources:
           clusters:
-          - name: "wasm-repo"
-            connect_timeout: "60s"
-            type: LOGICAL_DNS
-            load_assignment:
-              cluster_name: "wasm-repo"
-              endpoints:
-              - lb_endpoints:
-                - endpoint:
-                    address:
-                      socket_address:
-                        address: wasm-repo.istio-ingress.svc.cluster.local
-                        port_value: 80
           - name: "db-ip"
             connect_timeout: "60s"
             type: LOGICAL_DNS

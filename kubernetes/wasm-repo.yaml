@@ -1,9 +1,15 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: wasm-repo
+  labels:
+    app: wasm-repo
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: wasm-repo-deployment
-  namespace: istio-ingress
+  namespace: wasm-repo
   labels:
     app: wasm-repo
 spec:
@@ -17,7 +23,7 @@ spec:
         app: wasm-repo
     spec:
       containers:
-      - name: wasm-repo-container
+      - name: wasm-repo
         image: boeboe/wasm-repo:v0.1.0
         ports:
         - containerPort: 8080
@@ -42,7 +48,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: wasm-repo
-  namespace: istio-ingress
+  namespace: wasm-repo
 spec:
   selector:
     app: wasm-repo
@@ -51,36 +57,3 @@ spec:
       port: 80
       targetPort: 8080
   type: LoadBalancer
----
-apiVersion: networking.istio.io/v1alpha3
-kind: Gateway
-metadata:
-  name: wasm-repo-gateway
-  namespace: istio-ingress
-spec:
-  selector:
-    istio: ingress
-  servers:
-  - port:
-      number: 80
-      name: http
-      protocol: HTTP
-    hosts:
-    - "wasm-repo.tetrate.io"
----
-apiVersion: networking.istio.io/v1alpha3
-kind: VirtualService
-metadata:
-  name: wasm-repo-virtual-service
-  namespace: istio-ingress
-spec:
-  hosts:
-  - "wasm-repo.tetrate.io"
-  gateways:
-  - wasm-repo-gateway
-  http:
-  - route:
-    - destination:
-        host: wasm-repo
-        port:
-          number: 80
