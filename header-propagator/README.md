@@ -80,8 +80,8 @@ The `pluginConfig` section provides specific configurations for the wasm plugin,
 |-----------------------|-----------------------------------------------------------------------------------------------|-----------------------|
 | `correlationHeader`   | Specifies the name of the header that the plugin will use for correlation purposes            | `x-request-id`        |
 | `propagationHeader`   | This subsection provides details about the header used for propagation                        |                       |
-| `default`             | The default value to be used for the propagation header if it's not present in the request    | `lane-a`              |
-| `name`                | The name of the header that will be used for propagation purposes                             | `x-tetrate-swimlaneid`|
+| `propagationHeader.default`             | The default value to be used for the propagation header if it's not present in the request    | `lane-a`              |
+| `propagationHeader.name`                | The name of the header that will be used for propagation purposes                             | `x-tetrate-swimlaneid`|
 | `requestPropagation`  | A boolean flag that determines if the plugin should handle propagation for incoming requests  | `true` or `false`     |
 | `responsePropagation` | A boolean flag that determines if the plugin should handle propagation for outgoing responses | `true` or `false`     |
 
