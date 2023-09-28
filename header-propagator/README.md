@@ -74,7 +74,7 @@ make curl
 - `make clean` : Remove output artifacts.
 - `make release-docker` : Release the Docker container on DockerHub.
 - `make release-github` : Release the WASM binary on GitHub.
-- `make deploy` : Deploy the demo applications and WASM filters.
+- `make deploy` : Deploy the demo applications and WASM filter.
 - `make dump-config` : Dump ingress and sidecar Envoy configs.
 - `make dump-logs` : Dump ingress and sidecar logs.
 - `make enable-full-debug` : Enable debug:all on ingress and sidecar.
@@ -89,7 +89,7 @@ make curl
 
 ## Contributing
 
-Contributions are welcome! PR's are encourared.
+Contributions are welcome! PR's are encouraged.
 
 ## License
 
