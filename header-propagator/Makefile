@@ -11,8 +11,8 @@ help: ## This help
 .DEFAULT_GOAL := help
 
 .ONESHELL:
-.PHONY: compile release-docker release-github deploy dump-config enable-wasm-debug curl
-.SILENT: compile release-docker release-github deploy dump-config enable-wasm-debug curl
+.PHONY: compile release-docker release-github deploy dump-config dump-logs enable-wasm-debug curl
+.SILENT: compile release-docker release-github deploy dump-config dump-logs enable-wasm-debug curl
 
 NAME := envoy-wasm-plugins
 WASM := $(NAME).wasm
@@ -24,30 +24,30 @@ REPO ?= boeboe/envoy-wasm-plugins
 
 LINTER := github.com/golangci/golangci-lint/cmd/golangci-lint@v1.50.0
 
-all: clean test lint release-docker release-github deploy
+all: clean test lint release-docker release-github deploy ## Rebuild, rerelease and redeploy
 
-compile:
+compile: ## Compile the wasm binary
 	@echo "Compiling..."
 	tinygo build -o $(OUT) -scheduler=none -target=wasi ./...
 
-test:
+test: ## Run golang tests
 	@echo "Running tests..."
 	go test -v -tags=proxytest ./...
 
-lint:
+lint: # Lint golang code
 	@echo "Linting code..."
 	go run $(LINTER) run --verbose --build-tags proxytest
 
-clean:
+clean:## Remove output artifats
 	@echo "Cleaning up..."
 	rm -f *.wasm
 
-release-docker: compile
+release-docker: compile ## Release docker container on dockerhub
 	@echo "Releasing Docker image..."
 	docker build --platform linux/amd64 --build-arg WASM_BINARY_PATH=$(OUT) -t $(HUB)/$(NAME):$(TAG) .
 	docker push $(HUB)/$(NAME):$(TAG)
 
-release-github: compile
+release-github: compile ## Release wasm binary on github
 	@echo "Releasing to GitHub..."
 	@echo "Checking if release $(TAG) already exists..."
 	@if gh release view $(TAG) -R $(REPO) > /dev/null 2>&1; then \
@@ -57,7 +57,7 @@ release-github: compile
 	@echo "Creating a new release on GitHub..."
 	gh release create $(TAG) $(WASM) --title "Release $(TAG)" --notes "Release notes for $(TAG)" --repo $(REPO)
 
-deploy:
+deploy: ## Deploy the demo applications and wasm filters
 	@echo "Deploying..."
 	kubectl apply -f istio/zipkin.yaml
 	kubectl apply -f istio/gateway.yaml
@@ -70,35 +70,41 @@ deploy:
 	kubectl delete pod $$(kubectl get pods -n ns-b -o custom-columns=:metadata.name -l app=app-b) -n ns-b
 	kubectl delete pod $$(kubectl get pods -n ns-httpbin -o custom-columns=:metadata.name -l app=httpbin) -n ns-httpbin
 
-dump-config:
+dump-config: ## Dump ingress and sidecar envoy configs
 	@echo "Dumping config..."
 	kubectl exec $$(kubectl get pods -n istio-ingress -o custom-columns=:metadata.name -l istio=ingress) -n istio-ingress -- pilot-agent request GET config_dump > ingress_config_dump-$$(date "+%Y.%m.%d-%H.%M.%S").json
 	istioctl pc dump $$(kubectl get pods -n ns-a -o custom-columns=:metadata.name -l app=app-a) -n ns-a --output json > app_a_config_dump-$$(date "+%Y.%m.%d-%H.%M.%S").json
 	istioctl pc dump $$(kubectl get pods -n ns-b -o custom-columns=:metadata.name -l app=app-b) -n ns-b --output json > app_b_config_dump-$$(date "+%Y.%m.%d-%H.%M.%S").json
 	istioctl pc dump $$(kubectl get pods -n ns-httpbin -o custom-columns=:metadata.name -l app=httpbin) -n ns-httpbin --output json > httpbin_config_dump-$$(date "+%Y.%m.%d-%H.%M.%S").json
 
-enable-full-debug:
+dump-logs: ## Dump ingress and sidecar logs
+	kubectl -n istio-ingress logs $$(kubectl get pods -n istio-ingress -o custom-columns=:metadata.name -l istio=ingress) > ingress_logs-$$(date "+%Y.%m.%d-%H.%M.%S").log
+	kubectl -n ns-a logs $$(kubectl get pods -n ns-a -o custom-columns=:metadata.name -l app=app-a) -c istio-proxy > app_a_logs-$$(date "+%Y.%m.%d-%H.%M.%S").log
+	kubectl -n ns-b logs $$(kubectl get pods -n ns-b -o custom-columns=:metadata.name -l app=app-b) -c istio-proxy > app_b_logs-$$(date "+%Y.%m.%d-%H.%M.%S").log
+	kubectl -n ns-httpbin logs $$(kubectl get pods -n ns-httpbin -o custom-columns=:metadata.name -l app=httpbin) -c istio-proxy > httpbin_logs-$$(date "+%Y.%m.%d-%H.%M.%S").log
+
+enable-full-debug: ## Enable debug:all on ingress and sidecar
 	@echo "Enabling full debug..."
 	istioctl -n istio-ingress pc log $$(kubectl get pods -n istio-ingress -o custom-columns=:metadata.name -l istio=ingress).istio-ingress --level debug
 	istioctl -n ns-a pc log $$(kubectl get pods -n ns-a -o custom-columns=:metadata.name -l app=app-a).ns-a --level debug
 	istioctl -n ns-b pc log $$(kubectl get pods -n ns-b -o custom-columns=:metadata.name -l app=app-b).ns-b --level debug
 	istioctl -n ns-httpbin pc log $$(kubectl get pods -n ns-httpbin -o custom-columns=:metadata.name -l app=httpbin).ns-httpbin --level debug
 
-enable-full-info:
+enable-full-info: ## Enable info:all on ingress and sidecar
 	@echo "Enabling full info..."
 	istioctl -n istio-ingress pc log $$(kubectl get pods -n istio-ingress -o custom-columns=:metadata.name -l istio=ingress).istio-ingress --level info
 	istioctl -n ns-a pc log $$(kubectl get pods -n ns-a -o custom-columns=:metadata.name -l app=app-a).ns-a --level info
 	istioctl -n ns-b pc log $$(kubectl get pods -n ns-b -o custom-columns=:metadata.name -l app=app-b).ns-b --level info
 	istioctl -n ns-httpbin pc log $$(kubectl get pods -n ns-httpbin -o custom-columns=:metadata.name -l app=httpbin).ns-httpbin --level info
 
-enable-wasm-debug:
+enable-wasm-debug: ## Enable debug:wasm on ingress and sidecar
 	@echo "Enabling WASM debug..."
 	istioctl pc log $$(kubectl get pods -n istio-ingress -o custom-columns=:metadata.name -l istio=ingress).istio-ingress --level wasm:debug
 	istioctl pc log $$(kubectl get pods -n ns-a -o custom-columns=:metadata.name -l app=app-a).ns-a --level wasm:debug
 	istioctl pc log $$(kubectl get pods -n ns-b -o custom-columns=:metadata.name -l app=app-b).ns-b --level wasm:debug
 	istioctl pc log $$(kubectl get pods -n ns-httpbin -o custom-columns=:metadata.name -l app=httpbin).ns-httpbin --level wasm:debug
 
-curl:
+curl: ## Print some sample curl commands for manual verification
 	@echo "Single request..."
 	@echo curl -v -H \"X-B3-Sampled: 1\" -H \"X-B3-Traceid: $$(openssl rand -hex 16)\" -H \"X-Tetrate-Swimlaneid: lane-a\" \
 		--resolve \"propagate.tetrate.io:80:$$(kubectl get services --namespace istio-ingress istio-ingress --output jsonpath='{.status.loadBalancer.ingress[0].ip}')\" \"http://propagate.tetrate.io/proxy/app-b.ns-b/proxy/httpbin.ns-httpbin/headers\"
