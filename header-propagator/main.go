@@ -41,7 +41,6 @@ type pluginContext struct {
 
 func (p *pluginContext) OnPluginStart(pluginConfigurationSize int) types.OnPluginStartStatus {
 	proxywasm.LogInfo("********** OnPluginStart **********")
-
 	if pluginConfigurationSize == 0 {
 		return types.OnPluginStartStatusOK
 	}
@@ -90,7 +89,6 @@ type httpContext struct {
 
 func (ctx *httpContext) OnHttpRequestHeaders(numHeaders int, endOfStream bool) types.Action {
 	proxywasm.LogInfo("********** OnHttpRequestHeaders **********")
-
 	reqHeaders := properties.GetRequestHeaders()
 	direction := properties.GetListenerDirection()
 	proxywasm.LogInfof("GetRequestHeaders: %+v", reqHeaders)
@@ -134,14 +132,10 @@ func (ctx *httpContext) OnHttpRequestHeaders(numHeaders int, endOfStream bool) t
 }
 
 func (ctx *httpContext) OnHttpRequestBody(bodySize int, endOfStream bool) types.Action {
-	proxywasm.LogInfo("********** OnHttpRequestBody **********")
-
 	return types.ActionContinue
 }
 
 func (ctx *httpContext) OnHttpRequestTrailers(bodySize int) types.Action {
-	proxywasm.LogInfo("********** OnHttpRequestTrailers **********")
-
 	return types.ActionContinue
 }
 
@@ -151,22 +145,19 @@ func (ctx *httpContext) OnHttpRequestTrailers(bodySize int) types.Action {
 
 func (ctx *httpContext) OnHttpResponseHeaders(numHeaders int, endOfStream bool) types.Action {
 	proxywasm.LogInfo("********** OnHttpResponseHeaders **********")
-
 	resHeaders := properties.GetResponseHeaders()
+	direction := properties.GetListenerDirection()
 	proxywasm.LogInfof("GetResponseHeaders: %+v", resHeaders)
+	proxywasm.LogInfof("direction: %v", direction)
 
 	return types.ActionContinue
 }
 
 func (ctx *httpContext) OnHttpResponseBody(bodySize int, endOfStream bool) types.Action {
-	proxywasm.LogInfo("********** OnHttpResponseBody **********")
-
 	return types.ActionContinue
 }
 
 func (ctx *httpContext) OnHttpResponseTrailers(bodySize int) types.Action {
-	proxywasm.LogInfo("********** OnHttpResponseTrailers **********")
-
 	return types.ActionContinue
 }
 
