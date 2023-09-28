@@ -45,10 +45,11 @@ cd envoy-wasm-plugins
 make compile
 ```
 
-3. Build and release the Docker container:
+3. Build and release the docker container or the wasm binary:
 
 ```bash
 make release-docker
+make release-github
 ```
 
 4. Deploy the demo applications and WASM filters:
@@ -57,7 +58,7 @@ make release-docker
 make deploy
 ```
 
-5. Use the provided curl commands for manual verification
+5. Use the provided `curl` commands for manual verification
 
 ```bash
 make curl
