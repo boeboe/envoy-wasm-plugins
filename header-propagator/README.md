@@ -84,8 +84,8 @@ make curl
 
 ## Releases
 
-Docker Container: [DockerHub](https://hub.docker.com/r/boeboe/envoy-wasm-plugins/tags)
-WASM Binary: [GitHub Releases](https://github.com/boeboe/envoy-wasm-plugins/releases)
+- Docker Container: [DockerHub](https://hub.docker.com/r/boeboe/envoy-wasm-plugins/tags)
+- WASM Binary: [GitHub Releases](https://github.com/boeboe/envoy-wasm-plugins/releases)
 
 ## Contributing
 
