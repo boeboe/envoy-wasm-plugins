@@ -2,6 +2,8 @@ package main
 
 import (
 	"header-propagator/properties"
+	"header-propagator/utils"
+	"strings"
 
 	"github.com/tetratelabs/proxy-wasm-go-sdk/proxywasm"
 	"github.com/tetratelabs/proxy-wasm-go-sdk/proxywasm/types"
@@ -9,15 +11,15 @@ import (
 	"github.com/tidwall/gjson"
 )
 
-type PluginConfig struct {
-	CorrelationHeaders []struct {
-		Name string `json:"name"`
-	} `json:"correlationHeaders"`
-	PropagationHeaders []struct {
-		Name    string `json:"name"`
-		Default string `json:"default"`
-	} `json:"propagationHeaders"`
-	Enabled bool `json:"enabled"`
+type pluginConfig struct {
+	CorrelationHeader string            `json:"correlationHeader"`
+	PropagationHeader propagationHeader `json:"propagationHeader"`
+	Enabled           bool              `json:"enabled"`
+}
+
+type propagationHeader struct {
+	Name    string `json:"name"`
+	Default string `json:"default"`
 }
 
 func main() {
@@ -34,7 +36,7 @@ func (*vmContext) NewPluginContext(contextID uint32) types.PluginContext {
 
 type pluginContext struct {
 	types.DefaultPluginContext
-	config PluginConfig
+	config pluginConfig
 }
 
 func (p *pluginContext) OnPluginStart(pluginConfigurationSize int) types.OnPluginStartStatus {
@@ -60,43 +62,26 @@ func (p *pluginContext) OnPluginStart(pluginConfigurationSize int) types.OnPlugi
 
 	// Parsing the enabled field.
 	p.config.Enabled = jsonData.Get("enabled").Bool()
-
-	// For arrays, we need to handle them separately.
-	jsonData.Get("correlationHeaders").ForEach(func(_, v gjson.Result) bool {
-		header := struct {
-			Name string `json:"name"`
-		}{
-			Name: v.Get("name").String(),
-		}
-		p.config.CorrelationHeaders = append(p.config.CorrelationHeaders, header)
-		return true
-	})
-
-	jsonData.Get("propagationHeaders").ForEach(func(_, v gjson.Result) bool {
-		header := struct {
-			Name    string `json:"name"`
-			Default string `json:"default"`
-		}{
-			Name:    v.Get("name").String(),
-			Default: v.Get("default").String(),
-		}
-		p.config.PropagationHeaders = append(p.config.PropagationHeaders, header)
-		return true
-	})
+	p.config.CorrelationHeader = jsonData.Get("correlationHeader").String()
+	p.config.PropagationHeader = propagationHeader{
+		Name:    jsonData.Get("propagationHeader.name").String(),
+		Default: jsonData.Get("propagationHeader.default").String(),
+	}
 
 	proxywasm.LogDebugf("Parsed plugin config: %v", p.config)
-
 	return types.OnPluginStartStatusOK
 }
 
-func (*pluginContext) NewHttpContext(contextID uint32) types.HttpContext {
+func (p *pluginContext) NewHttpContext(contextID uint32) types.HttpContext {
 	proxywasm.LogInfo("********** NewHttpContext **********")
-	return &httpContext{contextID: contextID}
+	return &httpContext{contextID: contextID, correlationHeader: p.config.CorrelationHeader, propagationHeader: p.config.PropagationHeader}
 }
 
 type httpContext struct {
 	types.DefaultHttpContext
-	contextID uint32
+	contextID         uint32
+	correlationHeader string
+	propagationHeader propagationHeader
 }
 
 // *********************************************
@@ -107,8 +92,44 @@ func (ctx *httpContext) OnHttpRequestHeaders(numHeaders int, endOfStream bool) t
 	proxywasm.LogInfo("********** OnHttpRequestHeaders **********")
 
 	reqHeaders := properties.GetRequestHeaders()
+	direction := properties.GetListenerDirection()
 	proxywasm.LogInfof("GetRequestHeaders: %+v", reqHeaders)
+	proxywasm.LogInfof("direction: %v", direction)
 
+	cHeaderVal, ok := reqHeaders[strings.ToLower(ctx.correlationHeader)]
+	if !ok {
+		proxywasm.LogInfof("correlationHeader '%v' not available in the request headers", strings.ToLower(ctx.correlationHeader))
+		return types.ActionContinue
+	}
+	proxywasm.LogInfof("correlationHeader '%v' available in the request headers with value '%v'", strings.ToLower(ctx.correlationHeader), cHeaderVal)
+
+	switch direction.String() {
+	case "UNSPECIFIED":
+	case "INBOUND":
+		pHeaderVal, ok := reqHeaders[strings.ToLower(ctx.propagationHeader.Name)]
+		if !ok {
+			if err := proxywasm.AddHttpRequestHeader(strings.ToLower(ctx.propagationHeader.Name), ctx.propagationHeader.Default); err != nil {
+				proxywasm.LogErrorf("failed to set request header: %v", err)
+			}
+			proxywasm.LogInfof("inbound header '%v' set to default value: '%v'", strings.ToLower(ctx.propagationHeader.Name), ctx.propagationHeader.Default)
+		} else {
+			if err := utils.SetSharedDataSafe(cHeaderVal, []byte(pHeaderVal), 0); err != nil {
+				proxywasm.LogErrorf("failed to set shared data key '%v' with value '%v': %v", cHeaderVal, pHeaderVal, err)
+			}
+		}
+	case "OUTBOUND":
+		_, ok := reqHeaders[strings.ToLower(ctx.propagationHeader.Name)]
+		if !ok {
+			pHeaderVal, _, err := utils.GetSharedDataSafe(cHeaderVal)
+			if err != nil {
+				proxywasm.LogErrorf("failed to get shared data key '%v': %v", cHeaderVal, err)
+			}
+			if err := proxywasm.AddHttpRequestHeader(strings.ToLower(ctx.propagationHeader.Name), string(pHeaderVal)); err != nil {
+				proxywasm.LogErrorf("failed to set request header '%v' with value '%v': %v", strings.ToLower(ctx.propagationHeader.Name), string(pHeaderVal), err)
+			}
+			proxywasm.LogInfof("outbound header '%v' added with value '%v'", strings.ToLower(ctx.propagationHeader.Name), string(pHeaderVal))
+		}
+	}
 	return types.ActionContinue
 }
 

@@ -12,5 +12,7 @@ require (
 )
 
 require header-propagator/properties v0.0.0
+require header-propagator/utils v0.0.0
 
 replace header-propagator/properties => ./properties
+replace header-propagator/utils => ./utils

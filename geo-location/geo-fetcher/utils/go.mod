@@ -1,3 +1,3 @@
-module geo-fetcher/properties
+module geo-fetcher/utils
 
 go 1.19

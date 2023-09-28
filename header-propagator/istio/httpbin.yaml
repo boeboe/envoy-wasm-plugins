@@ -19,6 +19,7 @@ kind: Deployment
 metadata:
   labels:
     app: httpbin
+    header-propagation.tetrate.io/enabled: 'true'
     version: v1
   name: httpbin-v1
   namespace: ns-httpbin
@@ -32,6 +33,7 @@ spec:
     metadata:
       labels:
         app: httpbin
+        header-propagation.tetrate.io/enabled: 'true'
         version: v1
     spec:
       containers:
