@@ -70,6 +70,12 @@ deploy: ## Deploy the demo applications and wasm filters
 	kubectl delete pod $$(kubectl get pods -n ns-b -o custom-columns=:metadata.name -l app=app-b) -n ns-b
 	kubectl delete pod $$(kubectl get pods -n ns-httpbin -o custom-columns=:metadata.name -l app=httpbin) -n ns-httpbin
 
+reboot-pods: ## Force reboot workload pods
+	@echo "Force restarting pods..."
+	kubectl delete pod $$(kubectl get pods -n ns-a -o custom-columns=:metadata.name -l app=app-a) -n ns-a
+	kubectl delete pod $$(kubectl get pods -n ns-b -o custom-columns=:metadata.name -l app=app-b) -n ns-b
+	kubectl delete pod $$(kubectl get pods -n ns-httpbin -o custom-columns=:metadata.name -l app=httpbin) -n ns-httpbin
+
 dump-config: ## Dump ingress and sidecar envoy configs
 	@echo "Dumping config..."
 	kubectl exec $$(kubectl get pods -n istio-ingress -o custom-columns=:metadata.name -l istio=ingress) -n istio-ingress -- pilot-agent request GET config_dump > ingress_config_dump-$$(date "+%Y.%m.%d-%H.%M.%S").json
@@ -97,6 +103,13 @@ enable-full-info: ## Enable info:all on ingress and sidecar
 	istioctl -n ns-b pc log $$(kubectl get pods -n ns-b -o custom-columns=:metadata.name -l app=app-b).ns-b --level info
 	istioctl -n ns-httpbin pc log $$(kubectl get pods -n ns-httpbin -o custom-columns=:metadata.name -l app=httpbin).ns-httpbin --level info
 
+enable-http-debug: ## Enable debug:http on ingress and sidecar
+	@echo "Enabling HTTP debug..."
+	istioctl pc log $$(kubectl get pods -n istio-ingress -o custom-columns=:metadata.name -l istio=ingress).istio-ingress --level http:debug
+	istioctl pc log $$(kubectl get pods -n ns-a -o custom-columns=:metadata.name -l app=app-a).ns-a --level http:debug
+	istioctl pc log $$(kubectl get pods -n ns-b -o custom-columns=:metadata.name -l app=app-b).ns-b --level http:debug
+	istioctl pc log $$(kubectl get pods -n ns-httpbin -o custom-columns=:metadata.name -l app=httpbin).ns-httpbin --level http:debug
+
 enable-wasm-debug: ## Enable debug:wasm on ingress and sidecar
 	@echo "Enabling WASM debug..."
 	istioctl pc log $$(kubectl get pods -n istio-ingress -o custom-columns=:metadata.name -l istio=ingress).istio-ingress --level wasm:debug
@@ -105,13 +118,16 @@ enable-wasm-debug: ## Enable debug:wasm on ingress and sidecar
 	istioctl pc log $$(kubectl get pods -n ns-httpbin -o custom-columns=:metadata.name -l app=httpbin).ns-httpbin --level wasm:debug
 
 curl: ## Print some sample curl commands for manual verification
+	traceid=$$(openssl rand -hex 16) 			# x-b3-traceid
+	spanid=$$(openssl rand -hex 8) 				# x-b3-spanid
+	parentspanid=$$(openssl rand -hex 8) 	# x-b3-parentspanid
+	requestid=$$(uuidgen) 								# x-request-id
+	headers="-H \"x-b3-sampled: 1\" -H \"x-request-id: $${requestid}\" -H \"x-tetrate-swimlaneid: lane-a\""
+	httpbinquery="x-request-id=$${requestid}"
+
 	@echo "Single request..."
-	@echo curl -v -H \"X-B3-Sampled: 1\" -H \"X-B3-Traceid: $$(openssl rand -hex 16)\" -H \"X-Tetrate-Swimlaneid: lane-a\" \
-		--resolve \"propagate.tetrate.io:80:$$(kubectl get services --namespace istio-ingress istio-ingress --output jsonpath='{.status.loadBalancer.ingress[0].ip}')\" \"http://propagate.tetrate.io/proxy/app-b.ns-b/proxy/httpbin.ns-httpbin/headers\"
-	@echo curl -v -H \"X-B3-Sampled: 1\" -H \"X-B3-Traceid: $$(openssl rand -hex 16)\" -H \"X-Tetrate-Swimlaneid: lane-b\" \
-		--resolve \"propagate.tetrate.io:80:$$(kubectl get services --namespace istio-ingress istio-ingress --output jsonpath='{.status.loadBalancer.ingress[0].ip}')\" \"http://propagate.tetrate.io/proxy/app-b.ns-b/proxy/httpbin.ns-httpbin/headers\"
+	@echo curl -v $${headers} --resolve \"propagate.tetrate.io:80:$$(kubectl get services --namespace istio-ingress istio-ingress --output jsonpath='{.status.loadBalancer.ingress[0].ip}')\" \"http://propagate.tetrate.io/proxy/app-b.ns-b/proxy/httpbin.ns-httpbin/headers\"
+	@echo curl -v $${headers} --resolve \"propagate.tetrate.io:80:$$(kubectl get services --namespace istio-ingress istio-ingress --output jsonpath='{.status.loadBalancer.ingress[0].ip}')\" \"http://propagate.tetrate.io/proxy/app-b.ns-b/proxy/httpbin.ns-httpbin/response-headers?$${httpbinquery}\"
 	@echo "Execute in a loop..."
-	@echo "while true; do curl -v -H \"X-B3-Sampled: 1\" -H \"X-B3-Traceid: $$(openssl rand -hex 16)\" -H \"X-Tetrate-Swimlaneid: lane-a\" \
-		 --resolve \"propagate.tetrate.io:80:$$(kubectl get services --namespace istio-ingress istio-ingress --output jsonpath='{.status.loadBalancer.ingress[0].ip}')\" \"http://propagate.tetrate.io/proxy/app-b.ns-b/proxy/httpbin.ns-httpbin/headers\" ; sleep 1 ; done"
-	@echo "while true; do curl -v -H \"X-B3-Sampled: 1\" -H \"X-B3-Traceid: $$(openssl rand -hex 16)\" -H \"X-Tetrate-Swimlaneid: lane-a\" \
-		 --resolve \"propagate.tetrate.io:80:$$(kubectl get services --namespace istio-ingress istio-ingress --output jsonpath='{.status.loadBalancer.ingress[0].ip}')\" \"http://propagate.tetrate.io/proxy/app-b.ns-b/proxy/httpbin.ns-httpbin/headers\" ; sleep 1 ; done"
+	@echo "while true; do curl -v $${headers} --resolve \"propagate.tetrate.io:80:$$(kubectl get services --namespace istio-ingress istio-ingress --output jsonpath='{.status.loadBalancer.ingress[0].ip}')\" \"http://propagate.tetrate.io/proxy/app-b.ns-b/proxy/httpbin.ns-httpbin/headers\" ; sleep 1 ; done"
+	@echo "while true; do curl -v $${headers} --resolve \"propagate.tetrate.io:80:$$(kubectl get services --namespace istio-ingress istio-ingress --output jsonpath='{.status.loadBalancer.ingress[0].ip}')\" \"http://propagate.tetrate.io/proxy/app-b.ns-b/proxy/httpbin.ns-httpbin/headers/response-headers?$${httpbinquery}\" ; sleep 1 ; done"

@@ -5,10 +5,10 @@ This repository contains a plugin designed to enhance the functionality of Envoy
 ## Table of Contents
 
 - [Features](#features)
-- [Getting Started](#getting-started)
+- [Local Development](#development)
   - [Prerequisites](#prerequisites)
   - [Installation](#installation)
-- [Usage](#usage)
+- [Configuration](#configuration)
 - [Makefile Commands](#makefile-commands)
 - [Releases](#releases)
 - [Contributing](#contributing)
@@ -21,7 +21,7 @@ This repository contains a plugin designed to enhance the functionality of Envoy
 - Dynamic configuration through JSON.
 - Detailed logging for debugging and monitoring.
 
-## Getting Started
+## Local Development
 
 ### Prerequisites
 
@@ -45,7 +45,7 @@ cd envoy-wasm-plugins
 make compile
 ```
 
-3. Build the Docker container:
+3. Build and release the Docker container:
 
 ```bash
 make release-docker
@@ -57,13 +57,59 @@ make release-docker
 make deploy
 ```
 
-## Usage
-
-Use the provided curl commands for manual verification
+5. Use the provided curl commands for manual verification
 
 ```bash
 make curl
+
+# Single request...
+curl -v -H "x-b3-sampled: 1" -H "x-request-id: 31a9dd6e-2ac1-4058-96bd-30a9f7938714" -H "x-tetrate-swimlaneid: lane-a" --resolve "propagate.tetrate.io:80:172.18.0.101" "http://propagate.tetrate.io/proxy/app-b.ns-b/proxy/httpbin.ns-httpbin/headers"
+curl -v -H "x-b3-sampled: 1" -H "x-request-id: 31a9dd6e-2ac1-4058-96bd-30a9f7938714" -H "x-tetrate-swimlaneid: lane-a" --resolve "propagate.tetrate.io:80:172.18.0.101" "http://propagate.tetrate.io/proxy/app-b.ns-b/proxy/httpbin.ns-httpbin/response-headers?x-request-id=31a9dd6e-2ac1-4058-96bd-30a9f7938714"
+
+# Execute in a loop...
+while true; do curl -v -H "x-b3-sampled: 1" -H "x-request-id: 31a9dd6e-2ac1-4058-96bd-30a9f7938714" -H "x-tetrate-swimlaneid: lane-a" --resolve "propagate.tetrate.io:80:172.18.0.101" "http://propagate.tetrate.io/proxy/app-b.ns-b/proxy/httpbin.ns-httpbin/headers" ; sleep 1 ; done
+while true; do curl -v -H "x-b3-sampled: 1" -H "x-request-id: 31a9dd6e-2ac1-4058-96bd-30a9f7938714" -H "x-tetrate-swimlaneid: lane-a" --resolve "propagate.tetrate.io:80:172.18.0.101" "http://propagate.tetrate.io/proxy/app-b.ns-b/proxy/httpbin.ns-httpbin/headers/response-headers?x-request-id=31a9dd6e-2ac1-4058-96bd-30a9f7938714" ; sleep 1 ; done
 ```
+
+## Configuration:
+
+The `pluginConfig` section provides specific configurations for the wasm plugin, determining its behavior and processing of headers.
+
+| Parameter             | Description                                                                                   | Example               |
+|-----------------------|-----------------------------------------------------------------------------------------------|-----------------------|
+| `correlationHeader`   | Specifies the name of the header that the plugin will use for correlation purposes            | `x-request-id`        |
+| `propagationHeader`   | This subsection provides details about the header used for propagation                        |                       |
+| `default`             | The default value to be used for the propagation header if it's not present in the request    | `lane-a`              |
+| `name`                | The name of the header that will be used for propagation purposes                             | `x-tetrate-swimlaneid`|
+| `requestPropagation`  | A boolean flag that determines if the plugin should handle propagation for incoming requests  | `true` or `false`     |
+| `responsePropagation` | A boolean flag that determines if the plugin should handle propagation for outgoing responses | `true` or `false`     |
+
+
+To configure the `header-propagator` wasm plugin within istio, apply the following `WasmPlugin` configuration:
+
+```yaml
+apiVersion: extensions.istio.io/v1alpha1
+kind: WasmPlugin
+metadata:
+  name: header-propagator
+  namespace: istio-system
+spec:
+  imagePullPolicy: Always
+  pluginConfig:
+    correlationHeader: x-request-id
+    propagationHeader:
+      default: lane-a
+      name: x-tetrate-swimlaneid
+    requestPropagation: true
+    responsePropagation: true
+  pluginName: header-propagator
+  selector:
+    matchLabels:
+      header-propagation.tetrate.io/enabled: 'true'
+  url: oci://docker.io/boeboe/envoy-wasm-plugins:header-propagator-0.1
+```
+
+Make sure the appropriate label selector is configured on your pods or deployments.
 
 ## Makefile Commands
 
@@ -75,10 +121,12 @@ make curl
 - `make release-docker` : Release the Docker container on DockerHub.
 - `make release-github` : Release the WASM binary on GitHub.
 - `make deploy` : Deploy the demo applications and WASM filter.
+- `reboot-pods` : Force reboot workload pods.
 - `make dump-config` : Dump ingress and sidecar Envoy configs.
 - `make dump-logs` : Dump ingress and sidecar logs.
 - `make enable-full-debug` : Enable debug:all on ingress and sidecar.
 - `make enable-full-info` : Enable info:all on ingress and sidecar.
+- `make enable-http-debug` : Enable debug:http on ingress and sidecar.
 - `make enable-wasm-debug` : Enable debug:wasm on ingress and sidecar.
 - `make curl` : Print some sample curl commands for manual verification.
 

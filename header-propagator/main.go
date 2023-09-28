@@ -10,14 +10,18 @@ import (
 	"github.com/tidwall/gjson"
 )
 
-// pluginConfig represents the configuration for the plugin.
+const (
+	Inbound  = "INBOUND"
+	Outbound = "OUTBOUND"
+)
+
 type pluginConfig struct {
-	CorrelationHeader string            `json:"correlationHeader"`
-	PropagationHeader propagationHeader `json:"propagationHeader"`
-	Enabled           bool              `json:"enabled"`
+	CorrelationHeader   string            `json:"correlationHeader"`
+	PropagationHeader   propagationHeader `json:"propagationHeader"`
+	RequestPropagation  bool              `json:"requestPropagation"`
+	ResponsePropagation bool              `json:"responsePropagation"`
 }
 
-// propagationHeader represents the structure of the propagation header.
 type propagationHeader struct {
 	Name    string `json:"name"`
 	Default string `json:"default"`
@@ -31,7 +35,6 @@ type vmContext struct {
 	types.DefaultVMContext
 }
 
-// NewPluginContext creates a new plugin context.
 func (*vmContext) NewPluginContext(contextID uint32) types.PluginContext {
 	return &pluginContext{}
 }
@@ -41,149 +44,160 @@ type pluginContext struct {
 	config pluginConfig
 }
 
-// OnPluginStart initializes the plugin.
 func (p *pluginContext) OnPluginStart(pluginConfigurationSize int) types.OnPluginStartStatus {
-	proxywasm.LogInfo("Starting plugin...")
-
 	if pluginConfigurationSize == 0 {
 		return types.OnPluginStartStatusOK
 	}
 
-	// Read the plugin configuration.
 	configData, err := proxywasm.GetPluginConfiguration()
-	if err != nil {
-		proxywasm.LogErrorf("Failed to get plugin configuration: %v", err)
+	if err != nil || !gjson.ValidBytes(configData) {
 		return types.OnPluginStartStatusFailed
 	}
 
-	// Validate the plugin configuration JSON.
-	if !gjson.ValidBytes(configData) {
-		proxywasm.LogErrorf("Invalid JSON in plugin configuration: %v", string(configData))
-		return types.OnPluginStartStatusFailed
-	}
 	jsonData := gjson.ParseBytes(configData)
-
-	// Parse the configuration.
-	p.config.Enabled = jsonData.Get("enabled").Bool()
-	p.config.CorrelationHeader = jsonData.Get("correlationHeader").String()
-	p.config.PropagationHeader = propagationHeader{
-		Name:    jsonData.Get("propagationHeader.name").String(),
-		Default: jsonData.Get("propagationHeader.default").String(),
+	p.config = pluginConfig{
+		RequestPropagation:  jsonData.Get("requestPropagation").Bool(),
+		ResponsePropagation: jsonData.Get("responsePropagation").Bool(),
+		CorrelationHeader:   jsonData.Get("correlationHeader").String(),
+		PropagationHeader: propagationHeader{
+			Name:    jsonData.Get("propagationHeader.name").String(),
+			Default: jsonData.Get("propagationHeader.default").String(),
+		},
 	}
 
-	proxywasm.LogDebugf("Parsed plugin config: %v", p.config)
 	return types.OnPluginStartStatusOK
 }
 
-// NewHttpContext creates a new HTTP context.
 func (p *pluginContext) NewHttpContext(contextID uint32) types.HttpContext {
-	proxywasm.LogInfo("Creating new HTTP context...")
 	return &httpContext{
-		contextID:         contextID,
-		correlationHeader: p.config.CorrelationHeader,
-		propagationHeader: p.config.PropagationHeader,
+		contextID:           contextID,
+		correlationHeader:   p.config.CorrelationHeader,
+		propagationHeader:   p.config.PropagationHeader,
+		requestPropagation:  p.config.RequestPropagation,
+		responsePropagation: p.config.ResponsePropagation,
 	}
 }
 
 type httpContext struct {
 	types.DefaultHttpContext
-	contextID         uint32
-	correlationHeader string
-	propagationHeader propagationHeader
+	contextID           uint32
+	correlationHeader   string
+	propagationHeader   propagationHeader
+	requestPropagation  bool
+	responsePropagation bool
 }
 
-// OnHttpRequestHeaders handles incoming request headers.
 func (ctx *httpContext) OnHttpRequestHeaders(numHeaders int, endOfStream bool) types.Action {
-	proxywasm.LogInfo("Processing request headers...")
+	if !ctx.requestPropagation {
+		return types.ActionContinue
+	}
 
 	reqHeaders := properties.GetRequestHeaders()
 	direction := properties.GetListenerDirection()
 
 	cHeaderVal, ok := reqHeaders[strings.ToLower(ctx.correlationHeader)]
 	if !ok {
-		proxywasm.LogInfof("Correlation header '%v' not available in the request headers", strings.ToLower(ctx.correlationHeader))
 		return types.ActionContinue
 	}
 
 	switch direction.String() {
-	case "INBOUND":
+	case Inbound:
 		handleInboundRequest(ctx, reqHeaders, cHeaderVal)
-	case "OUTBOUND":
+	case Outbound:
 		handleOutboundRequest(ctx, reqHeaders, cHeaderVal)
 	}
 
 	return types.ActionContinue
 }
 
-// handleInboundRequest processes an inbound request.
 func handleInboundRequest(ctx *httpContext, reqHeaders map[string]string, cHeaderVal string) {
-	pHeaderVal, ok := reqHeaders[strings.ToLower(ctx.propagationHeader.Name)]
+	pHeaderName := strings.ToLower(ctx.propagationHeader.Name)
+	pHeaderVal, ok := reqHeaders[pHeaderName]
+
 	if !ok {
-		if err := proxywasm.AddHttpRequestHeader(strings.ToLower(ctx.propagationHeader.Name), ctx.propagationHeader.Default); err != nil {
-			proxywasm.LogErrorf("Failed to set inbound request header: %v", err)
-		}
+		setRequestHeader(pHeaderName, ctx.propagationHeader.Default)
+		setSharedData(cHeaderVal, ctx.propagationHeader.Default)
 	} else {
-		if err := utils.SetSharedDataSafe(cHeaderVal, []byte(pHeaderVal), 0); err != nil {
-			proxywasm.LogErrorf("Failed to set shared data key '%v' with value '%v': %v", cHeaderVal, pHeaderVal, err)
-		}
+		setSharedData(cHeaderVal, pHeaderVal)
 	}
 }
 
-// handleOutboundRequest processes an outbound request.
 func handleOutboundRequest(ctx *httpContext, reqHeaders map[string]string, cHeaderVal string) {
-	_, ok := reqHeaders[strings.ToLower(ctx.propagationHeader.Name)]
-	if !ok {
-		pHeaderVal, _, err := utils.GetSharedDataSafe(cHeaderVal)
-		if err != nil {
-			proxywasm.LogErrorf("Failed to get shared data key '%v': %v", cHeaderVal, err)
-		}
-		if err := proxywasm.AddHttpRequestHeader(strings.ToLower(ctx.propagationHeader.Name), string(pHeaderVal)); err != nil {
-			proxywasm.LogErrorf("Failed to set outbound request header '%v' with value '%v': %v", strings.ToLower(ctx.propagationHeader.Name), string(pHeaderVal), err)
+	pHeaderName := strings.ToLower(ctx.propagationHeader.Name)
+
+	if _, ok := reqHeaders[pHeaderName]; !ok {
+		pHeaderVal, err := getSharedData(cHeaderVal)
+		if err == nil {
+			setRequestHeader(pHeaderName, pHeaderVal)
 		}
 	}
 }
 
-// OnHttpResponseHeaders handles incoming response headers.
 func (ctx *httpContext) OnHttpResponseHeaders(numHeaders int, endOfStream bool) types.Action {
-	proxywasm.LogInfo("Processing response headers...")
+	if !ctx.responsePropagation {
+		return types.ActionContinue
+	}
 
 	resHeaders := properties.GetResponseHeaders()
 	direction := properties.GetListenerDirection()
 
 	cHeaderVal, ok := resHeaders[strings.ToLower(ctx.correlationHeader)]
 	if !ok {
-		proxywasm.LogInfof("Correlation header '%v' not available in the response headers", strings.ToLower(ctx.correlationHeader))
 		return types.ActionContinue
 	}
 
 	switch direction.String() {
-	case "INBOUND":
+	case Inbound:
 		handleInboundResponse(ctx, resHeaders, cHeaderVal)
-	case "OUTBOUND":
+	case Outbound:
 		handleOutboundResponse(ctx, resHeaders, cHeaderVal)
 	}
 
 	return types.ActionContinue
 }
 
-// handleInboundResponse processes an inbound response.
 func handleInboundResponse(ctx *httpContext, resHeaders map[string]string, cHeaderVal string) {
-	pHeaderVal, _, err := utils.GetSharedDataSafe(cHeaderVal)
-	if err != nil {
-		proxywasm.LogErrorf("Failed to get shared data key '%v': %v", cHeaderVal, err)
-	}
-	if err := proxywasm.AddHttpResponseHeader(strings.ToLower(ctx.propagationHeader.Name), string(pHeaderVal)); err != nil {
-		proxywasm.LogErrorf("Failed to set inbound response header '%v' with value '%v': %v", strings.ToLower(ctx.propagationHeader.Name), string(pHeaderVal), err)
+	pHeaderName := strings.ToLower(ctx.propagationHeader.Name)
+
+	if _, ok := resHeaders[pHeaderName]; !ok {
+		pHeaderVal, err := getSharedData(cHeaderVal)
+		if err == nil {
+			setResponseHeader(pHeaderName, pHeaderVal)
+		}
 	}
 }
 
-// handleOutboundResponse processes an outbound response.
 func handleOutboundResponse(ctx *httpContext, resHeaders map[string]string, cHeaderVal string) {
-	pHeaderVal, _, err := utils.GetSharedDataSafe(cHeaderVal)
-	if err != nil {
-		proxywasm.LogErrorf("Failed to get shared data key '%v': %v", cHeaderVal, err)
+	pHeaderName := strings.ToLower(ctx.propagationHeader.Name)
+
+	if _, ok := resHeaders[pHeaderName]; !ok {
+		pHeaderVal, err := getSharedData(cHeaderVal)
+		if err == nil {
+			setResponseHeader(pHeaderName, pHeaderVal)
+		}
 	}
-	if err := proxywasm.AddHttpResponseHeader(strings.ToLower(ctx.propagationHeader.Name), string(pHeaderVal)); err != nil {
-		proxywasm.LogErrorf("Failed to set outbound response header '%v' with value '%v': %v", strings.ToLower(ctx.propagationHeader.Name), string(pHeaderVal), err)
+}
+
+// Helper functions to reduce repetition
+func setRequestHeader(name, value string) {
+	if err := proxywasm.AddHttpRequestHeader(name, value); err != nil {
+		proxywasm.LogErrorf("Failed to set request header: %v", err)
 	}
+}
+
+func setResponseHeader(name, value string) {
+	if err := proxywasm.AddHttpResponseHeader(name, value); err != nil {
+		proxywasm.LogErrorf("Failed to set response header: %v", err)
+	}
+}
+
+func setSharedData(key, value string) {
+	if err := utils.SetSharedDataSafe(key, []byte(value), 0); err != nil {
+		proxywasm.LogErrorf("Failed to set shared data: %v", err)
+	}
+}
+
+func getSharedData(key string) (string, error) {
+	data, _, err := utils.GetSharedDataSafe(key)
+	return string(data), err
 }

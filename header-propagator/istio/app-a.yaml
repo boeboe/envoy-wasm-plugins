@@ -44,6 +44,7 @@ spec:
             - '--ep-errors=0'
             - '--ep-headers=0'
             - '--ep-drop-headers=x-tetrate-swimlaneid'
+            - '--ep-preserve-query=true'
             - '--zipkin-reporter-endpoint=http://zipkin.istio-system.svc.cluster.local:9411/api/v2/spans'
             - '--zipkin-sample-rate=0.0'
             - '--zipkin-singlehost-spans'
@@ -51,7 +52,7 @@ spec:
             - name: SVCNAME
               value: app-a
           image: boeboe/obs-tester-server:drop-headers
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           name: obs-tester
           ports:
             - containerPort: 8000
