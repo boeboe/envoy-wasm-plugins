@@ -67,20 +67,20 @@ make curl
 
 ## Makefile Commands
 
-`make help`: Display the help menu.
-`make all`: Rebuild, rerelease, and redeploy.
-`make compile`: Compile the WASM binary.
-`make test`: Run GoLang tests.
-`make clean`: Remove output artifacts.
-`make release-docker`: Release the Docker container on DockerHub.
-`make release-github`: Release the WASM binary on GitHub.
-`make deploy`: Deploy the demo applications and WASM filters.
-`make dump-config`: Dump ingress and sidecar Envoy configs.
-`make dump-logs`: Dump ingress and sidecar logs.
-`make enable-full-debug`: Enable debug:all on ingress and sidecar.
-`make enable-full-info`: Enable info:all on ingress and sidecar.
-`make enable-wasm-debug`: Enable debug:wasm on ingress and sidecar.
-`make curl`: Print some sample curl commands for manual verification.
+- `make help` : Display the help menu.
+- `make all` : Rebuild, rerelease, and redeploy.
+- `make compile` : Compile the WASM binary.
+- `make test` : Run GoLang tests.
+- `make clean` : Remove output artifacts.
+- `make release-docker` : Release the Docker container on DockerHub.
+- `make release-github` : Release the WASM binary on GitHub.
+- `make deploy` : Deploy the demo applications and WASM filters.
+- `make dump-config` : Dump ingress and sidecar Envoy configs.
+- `make dump-logs` : Dump ingress and sidecar logs.
+- `make enable-full-debug` : Enable debug:all on ingress and sidecar.
+- `make enable-full-info` : Enable info:all on ingress and sidecar.
+- `make enable-wasm-debug` : Enable debug:wasm on ingress and sidecar.
+- `make curl` : Print some sample curl commands for manual verification.
 
 ## Releases
 
