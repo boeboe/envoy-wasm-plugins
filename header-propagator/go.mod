@@ -1,9 +1,16 @@
-module print-properties
+module header-propagator
 
 go 1.19
 
 require github.com/tetratelabs/proxy-wasm-go-sdk v0.22.0
 
-require print-properties/properties v0.0.0
+require github.com/tidwall/gjson v1.17.0
 
-replace print-properties/properties => ./properties
+require (
+	github.com/tidwall/match v1.1.1 // indirect
+	github.com/tidwall/pretty v1.2.0 // indirect
+)
+
+require header-propagator/properties v0.0.0
+
+replace header-propagator/properties => ./properties

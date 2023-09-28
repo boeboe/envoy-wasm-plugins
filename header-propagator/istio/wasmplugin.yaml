@@ -3,20 +3,58 @@ apiVersion: extensions.istio.io/v1alpha1
 kind: WasmPlugin
 metadata:
   name: header-propagator
-  namespace: istio-ingress
+  namespace: istio-system
 spec:
   imagePullPolicy: Always
-  phase: AUTHN
   pluginConfig:
-    correlationHeaders: test_plugin_config_value
+    correlationHeaders:
+      - name: X-B3-Traceid
+    enabled: true
+    propagationHeaders:
+      - default: lane-a
+        name: X-Tetrate-Swimlaneid
   pluginName: header-propagator
   selector:
     matchLabels:
-      istio: ingress
+      header-propagation.tetrate.io/enabled: "true"
   url: oci://docker.io/boeboe/envoy-wasm-plugins:header-propagator-0.1
-  vmConfig:
-    env:
-      - name: POD_NAME
-        valueFrom: HOST
-      - name: TEST_ENV_VAR
-        value: testEnvValue
+# ---
+# apiVersion: extensions.istio.io/v1alpha1
+# kind: WasmPlugin
+# metadata:
+#   name: header-propagator
+#   namespace: ns-a
+# spec:
+#   imagePullPolicy: Always
+#   pluginConfig:
+#     correlationHeaders:
+#       - name: X-B3-Traceid
+#     enabled: true
+#     propagationHeaders:
+#       - default: lane-a
+#         name: X-Tetrate-Swimlaneid
+#   pluginName: header-propagator
+#   selector:
+#     matchLabels:
+#       header-propagation.tetrate.io/enabled: "true"
+#   url: oci://docker.io/boeboe/envoy-wasm-plugins:header-propagator-0.1
+# ---
+# apiVersion: extensions.istio.io/v1alpha1
+# kind: WasmPlugin
+# metadata:
+#   name: header-propagator
+#   namespace: ns-b
+# spec:
+#   imagePullPolicy: Always
+#   pluginConfig:
+#     correlationHeaders:
+#       - name: X-B3-Traceid
+#     enabled: true
+#     propagationHeaders:
+#       - default: lane-a
+#         name: X-Tetrate-Swimlaneid
+#   pluginName: header-propagator
+#   selector:
+#     matchLabels:
+#       header-propagation.tetrate.io/enabled: "true"
+#   url: oci://docker.io/boeboe/envoy-wasm-plugins:header-propagator-0.1

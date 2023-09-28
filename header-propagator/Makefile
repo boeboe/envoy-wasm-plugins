@@ -13,8 +13,8 @@ help: ## This help
 # https://www.gnu.org/software/make/manual/make.html#One-Shell
 # If the .ONESHELL special target appears anywhere in the makefile then all recipe lines for each target will be provided to a single invocation of the shell. Newlines between recipe lines will be preserved.
 .ONESHELL:
-.PHONY: docker-build docker-push deploy dump-config enable-wasm-debug curl
-.SILENT: docker-build docker-push deploy dump-config enable-wasm-debug curl
+.PHONY: compile docker-build docker-push deploy dump-config enable-wasm-debug curl
+.SILENT: compile docker-build docker-push deploy dump-config enable-wasm-debug curl
 
 NAME := envoy-wasm-plugins
 WASM := $(NAME).wasm
@@ -27,9 +27,7 @@ LINTER := github.com/golangci/golangci-lint/cmd/golangci-lint@v1.50.0
 
 all: clean test lint docker-build docker-push deploy
 
-compile: $(OUT)
-
-$(OUT):
+compile:
 	tinygo build -o $(OUT) -scheduler=none -target=wasi ./...
 
 test:
@@ -41,7 +39,7 @@ lint:
 clean:
 	rm -f *.wasm
 
-docker-build: $(OUT)
+docker-build: compile
 	docker build --platform linux/amd64 --build-arg WASM_BINARY_PATH=$(OUT) -t $(HUB)/$(NAME):$(TAG) .
 
 docker-push:
@@ -53,7 +51,9 @@ deploy:
 	kubectl apply -f istio/app-a.yaml
 	kubectl apply -f istio/app-b.yaml
 	kubectl apply -f istio/httpbin.yaml
-	# kubectl delete pod $$(kubectl get pods -n istio-ingress -o custom-columns=:metadata.name -l istio=ingress) -n istio-ingress
+	kubectl apply -f istio/wasmplugin.yaml
+	kubectl delete pod $$(kubectl get pods -n ns-a -o custom-columns=:metadata.name -l app=app-a) -n ns-a
+	kubectl delete pod $$(kubectl get pods -n ns-b -o custom-columns=:metadata.name -l app=app-b) -n ns-b
 
 dump-config:
 	kubectl exec $$(kubectl get pods -n istio-ingress -o custom-columns=:metadata.name -l istio=ingress) -n istio-ingress -- pilot-agent request GET config_dump > ingress_config_dump-$$(date "+%Y.%m.%d-%H.%M.%S").json
@@ -87,6 +87,16 @@ enable-wasm-debug:
 
 curl:
 	@echo "Single request..."
-	@echo curl -v -H \"X-B3-Sampled: 1\" -H \"X-B3-Traceid: $(openssl rand -hex 16)\" --resolve \"propagate.tetrate.io:80:$$(kubectl get services --namespace istio-ingress istio-ingress --output jsonpath='{.status.loadBalancer.ingress[0].ip}')\" \"http://propagate.tetrate.io/proxy/app-b.ns-b/proxy/httpbin.ns-httpbin/headers\"
+	@echo curl -v -H \"X-B3-Sampled: 1\" -H \"X-B3-Traceid: $(openssl rand -hex 16)\" -H \"X-Tetrate-Swimlaneid: lane-a\" \
+		--resolve \"propagate.tetrate.io:80:$$(kubectl get services --namespace istio-ingress istio-ingress --output jsonpath='{.status.loadBalancer.ingress[0].ip}')\" \"http://propagate.tetrate.io/proxy/app-b.ns-b/proxy/httpbin.ns-httpbin/headers\"
+	@echo curl -v -H \"X-B3-Sampled: 1\" -H \"X-B3-Traceid: $(openssl rand -hex 16)\" -H \"X-Tetrate-Swimlaneid: lane-b\" \
+		--resolve \"propagate.tetrate.io:80:$$(kubectl get services --namespace istio-ingress istio-ingress --output jsonpath='{.status.loadBalancer.ingress[0].ip}')\" \"http://propagate.tetrate.io/proxy/app-b.ns-b/proxy/httpbin.ns-httpbin/headers\"
+	
+	
 	@echo "Executing in a loop..."
-	@echo "while true; do curl -v -H \"X-B3-Sampled: 1\" -H \"X-B3-Traceid: $(openssl rand -hex 16)\" --resolve \"propagate.tetrate.io:80:$$(kubectl get services --namespace istio-ingress istio-ingress --output jsonpath='{.status.loadBalancer.ingress[0].ip}')\" \"http://propagate.tetrate.io/proxy/app-b.ns-b/proxy/httpbin.ns-httpbin/headers\" ; sleep 1 ; done"
+	@echo "while true; do curl -v -H \"X-B3-Sampled: 1\" -H \"X-B3-Traceid: $(openssl rand -hex 16)\" -H \"X-Tetrate-Swimlaneid: lane-a\" \
+		 --resolve \"propagate.tetrate.io:80:$$(kubectl get services --namespace istio-ingress istio-ingress --output jsonpath='{.status.loadBalancer.ingress[0].ip}')\" \"http://propagate.tetrate.io/proxy/app-b.ns-b/proxy/httpbin.ns-httpbin/headers\" ; sleep 1 ; done"
+	@echo "while true; do curl -v -H \"X-B3-Sampled: 1\" -H \"X-B3-Traceid: $(openssl rand -hex 16)\" -H \"X-Tetrate-Swimlaneid: lane-a\" \
+		 --resolve \"propagate.tetrate.io:80:$$(kubectl get services --namespace istio-ingress istio-ingress --output jsonpath='{.status.loadBalancer.ingress[0].ip}')\" \"http://propagate.tetrate.io/proxy/app-b.ns-b/proxy/httpbin.ns-httpbin/headers\" ; sleep 1 ; done"
+
+

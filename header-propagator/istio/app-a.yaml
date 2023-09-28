@@ -19,6 +19,7 @@ kind: Deployment
 metadata:
   labels:
     app: app-a
+    header-propagation.tetrate.io/enabled: 'true'
     version: v1
   name: app-a-v1
   namespace: ns-a
@@ -32,6 +33,7 @@ spec:
     metadata:
       labels:
         app: app-a
+        header-propagation.tetrate.io/enabled: 'true'
         version: v1
     spec:
       containers:
@@ -41,13 +43,14 @@ spec:
             - '--ep-duration=0'
             - '--ep-errors=0'
             - '--ep-headers=0'
+            - '--ep-drop-headers=x-tetrate-swimlaneid'
             - '--zipkin-reporter-endpoint=http://zipkin.istio-system.svc.cluster.local:9411/api/v2/spans'
             - '--zipkin-sample-rate=0.0'
             - '--zipkin-singlehost-spans'
           env:
             - name: SVCNAME
               value: app-a
-          image: nacx/obs-tester-server:1.2
+          image: boeboe/obs-tester-server:drop-headers
           imagePullPolicy: IfNotPresent
           name: obs-tester
           ports:
