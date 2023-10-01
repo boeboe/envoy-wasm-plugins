@@ -5,7 +5,7 @@ This repository contains a plugin designed to explore the WASM functionality of 
 ## Table of Contents
 
 - [Features](#features)
-- [Local Development](#development)
+- [Local Development](#local-development)
   - [Prerequisites](#prerequisites)
   - [Installation](#installation)
 - [Configuration](#configuration)
