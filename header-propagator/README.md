@@ -114,6 +114,8 @@ Make sure the appropriate label selector is configured on your pods or deploymen
 
 ## Makefile Commands
 
+The following `makefile` targets are available
+
 - `make help` : Display the help menu.
 - `make all` : Rebuild, rerelease, and redeploy.
 - `make compile` : Compile the WASM binary.
@@ -130,6 +132,28 @@ Make sure the appropriate label selector is configured on your pods or deploymen
 - `make enable-http-debug` : Enable debug:http on ingress and sidecar.
 - `make enable-wasm-debug` : Enable debug:wasm on ingress and sidecar.
 - `make curl` : Print some sample curl commands for manual verification.
+
+The `makefile` has a self describing help target as well, set as default target.
+
+```bash
+make
+help                           This help
+all                            Rebuild, rerelease and redeploy
+compile                        Compile the wasm binary
+test                           Run golang tests
+clean                          Remove output artifats
+release-docker                 Release docker container on dockerhub
+release-github                 Release wasm binary on github
+deploy                         Deploy the demo applications and wasm filters
+reboot-pods                    Force reboot workload pods
+dump-config                    Dump ingress and sidecar envoy configs
+dump-logs                      Dump ingress and sidecar logs
+enable-full-debug              Enable debug:all on ingress and sidecar
+enable-full-info               Enable info:all on ingress and sidecar
+enable-http-debug              Enable debug:http on ingress and sidecar
+enable-wasm-debug              Enable debug:wasm on ingress and sidecar
+curl                           Print some sample curl commands for manual verification
+```
 
 ## Releases
 
