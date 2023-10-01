@@ -70,7 +70,7 @@ curl -v -H "X-B3-Sampled: 1" --resolve "wasm.tetrate.io:80:172.18.0.101" "http:/
 
 ## Configuration
 
-The plugin can be configured using a JSON configuration. The configuration specifies which properties should be printed for various Plugin and HTTP events. The available properties include:
+The plugin can be configured using a JSON configuration. The configuration specifies which properties should be printed for various Plugin and HTTP events. The available Plugin and HTTP events include:
 
 | Parameter | Description | Type |
 |-----------|-------------|------|
@@ -83,7 +83,7 @@ The plugin can be configured using a JSON configuration. The configuration speci
 | `onHttpResponseTrailers` | Called when response trailers arrive | `propertiesPrinting` struct |
 | `onHttpStreamDone` | Called before the host deletes this context. You can retrieve the HTTP request/response information (such as headers, etc.) during this call. This can be used to implement logging features | propertiesPrinting struct |
 
-The `propertiesPrinting` struct look like this:
+The `propertiesPrinting` struct contains the available properties that can be printed:
 
 | Parameter | Description | Type | Documentation Link |
 |-----------|-------------|------|--------------------|
