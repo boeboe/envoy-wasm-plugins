@@ -86,7 +86,7 @@ The `pluginConfig` section provides specific configurations for the wasm plugin,
 | `responsePropagation` | A boolean flag that determines if the plugin should handle propagation for outgoing responses | `true` or `false`     |
 
 
-To configure the `header-propagator` wasm plugin within istio, apply the following `WasmPlugin` configuration:
+To configure the `header-propagator` wasm plugin within istio, apply the following [`WasmPlugin`](https://istio.io/latest/docs/reference/config/proxy_extensions/wasm-plugin/) configuration:
 
 ```yaml
 apiVersion: extensions.istio.io/v1alpha1

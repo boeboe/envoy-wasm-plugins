@@ -96,7 +96,7 @@ The `propertiesPrinting` struct look like this:
 | `printResponseProperties` | Print Response Properties | bool | [docs](https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/advanced/attributes#response-attributes)              |
 | `printRequestProperties` | Print Request Properties | bool | [docs](https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/advanced/attributes#request-attributes)               |
 
-To configure the `print-properties` wasm plugin within istio, apply the following `WasmPlugin` configuration:
+To configure the `print-properties` wasm plugin within istio, apply the following [`WasmPlugin`](https://istio.io/latest/docs/reference/config/proxy_extensions/wasm-plugin/) configuration:
 
 ```yaml
 apiVersion: extensions.istio.io/v1alpha1
