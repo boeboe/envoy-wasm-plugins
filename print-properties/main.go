@@ -5,75 +5,124 @@ import (
 
 	"github.com/tetratelabs/proxy-wasm-go-sdk/proxywasm"
 	"github.com/tetratelabs/proxy-wasm-go-sdk/proxywasm/types"
+	"github.com/tidwall/gjson"
 )
 
+// main initializes the VM context.
 func main() {
 	proxywasm.SetVMContext(&vmContext{})
 }
 
 type vmContext struct {
-	// Embed the default VM context here,
-	// so that we don't need to reimplement all the methods.
 	types.DefaultVMContext
 }
 
-// Override types.DefaultVMContext.
+// NewPluginContext is used for creating PluginContext for each plugin configuration.
 func (*vmContext) NewPluginContext(contextID uint32) types.PluginContext {
 	return &pluginContext{}
 }
 
 type pluginContext struct {
-	// Embed the default plugin context here,
-	// so that we don't need to reimplement all the methods.
 	types.DefaultPluginContext
+	pluginConfig pluginConfig
 }
 
-func (p *pluginContext) OnPluginStart(pluginConfigurationSize int) types.OnPluginStartStatus {
-	proxywasm.LogInfo("********** OnPluginStart **********")
-	// printWasmProperties()
+type pluginConfig struct {
+	OnPluginStart          propertiesPrinting `json:"onPluginStart"`
+	OnHttpRequestHeaders   propertiesPrinting `json:"onHttpRequestHeaders"`
+	OnHttpRequestBody      propertiesPrinting `json:"onHttpRequestBody"`
+	OnHttpRequestTrailers  propertiesPrinting `json:"onHttpRequestTrailers"`
+	OnHttpResponseHeaders  propertiesPrinting `json:"onHttpResponseHeaders"`
+	OnHttpResponseBody     propertiesPrinting `json:"onHttpResponseBody"`
+	OnHttpResponseTrailers propertiesPrinting `json:"onHttpResponseTrailers"`
+	OnHttpStreamDone       propertiesPrinting `json:"onHttpStreamDone"`
+}
 
+type propertiesPrinting struct {
+	PrintWasmProperties            bool `json:"printWasmProperties"`
+	PrintNodeMetadataProperties    bool `json:"printNodeMetadataProperties"`
+	PrintNodeProxyConfigProperties bool `json:"printNodeProxyConfigProperties"`
+	PrintXdsProperties             bool `json:"printXdsProperties"`
+	PrintUpstreamProperties        bool `json:"printUpstreamProperties"`
+	PrintConnectionProperties      bool `json:"printConnectionProperties"`
+	PrintResponseProperties        bool `json:"printResponseProperties"`
+	PrintRequestProperties         bool `json:"printRequestProperties"`
+}
+
+// OnPluginStart is called for all plugin contexts (after OnVmStart if this is the VM context).
+// During this call, GetPluginConfiguration is available and can be used to
+// retrieve the configuration set at config.configuration in the host configuration.
+func (p *pluginContext) OnPluginStart(pluginConfigurationSize int) types.OnPluginStartStatus {
+	if pluginConfigurationSize == 0 {
+		return types.OnPluginStartStatusOK
+	}
+
+	configData, err := proxywasm.GetPluginConfiguration()
+	if err != nil {
+		proxywasm.LogErrorf("Failed to get plugin configuration: %v", err)
+		return types.OnPluginStartStatusFailed
+	}
+	if !gjson.ValidBytes(configData) {
+		proxywasm.LogError("Invalid JSON configuration")
+		return types.OnPluginStartStatusFailed
+	}
+
+	p.pluginConfig = parseConfigData(configData)
+	if anyPrintBoolTrue(p.pluginConfig.OnPluginStart) {
+		proxywasm.LogInfo("********** OnPluginStart **********")
+		printProperties(p.pluginConfig.OnPluginStart)
+	}
 	return types.OnPluginStartStatusOK
 }
 
-// Override types.DefaultPluginContext.
-func (*pluginContext) NewHttpContext(contextID uint32) types.HttpContext {
-	proxywasm.LogInfo("********** NewHttpContext **********")
-	return &httpContext{contextID: contextID}
+// NewHttpContext is used for creating HttpContext for each Http stream.
+// Return nil to indicate this PluginContext is not for HttpContext
+func (p *pluginContext) NewHttpContext(contextID uint32) types.HttpContext {
+	return &httpContext{
+		contextID:    contextID,
+		pluginConfig: p.pluginConfig,
+	}
 }
 
 type httpContext struct {
-	// Embed the default http context here,
-	// so that we don't need to reimplement all the methods.
 	types.DefaultHttpContext
-	contextID uint32
+	contextID    uint32
+	pluginConfig pluginConfig
 }
 
 // *********************************************
 // REQUEST PATH
 // *********************************************
 
+// OnHttpRequestHeaders is called when request headers arrive.
+// Return types.ActionPause if you want to stop sending headers to the upstream.
 func (ctx *httpContext) OnHttpRequestHeaders(numHeaders int, endOfStream bool) types.Action {
-	proxywasm.LogInfo("********** OnHttpRequestHeaders **********")
-	printWasmProperties()
-	printConfigurationProperties()
-	printUpstreamProperties()
-	printConnectionProperties()
-	printRequestProperties()
-
+	if anyPrintBoolTrue(ctx.pluginConfig.OnHttpRequestHeaders) {
+		proxywasm.LogInfo("********** OnHttpRequestHeaders **********")
+		printProperties(ctx.pluginConfig.OnHttpRequestHeaders)
+	}
 	return types.ActionContinue
 }
 
+// OnHttpRequestBody is called when a request body *frame* arrives.
+// Note that this is potentially called multiple times until we see end_of_stream = true.
+// Return types.ActionPause if you want to buffer the body and stop sending body to the upstream.
+// Even after returning types.ActionPause, this will be called when an unseen frame arrives.
 func (ctx *httpContext) OnHttpRequestBody(bodySize int, endOfStream bool) types.Action {
-	proxywasm.LogInfo("********** OnHttpRequestBody **********")
-	printRequestProperties()
-
+	if anyPrintBoolTrue(ctx.pluginConfig.OnHttpRequestBody) {
+		proxywasm.LogInfo("********** OnHttpRequestBody **********")
+		printProperties(ctx.pluginConfig.OnHttpRequestBody)
+	}
 	return types.ActionContinue
 }
 
+// OnHttpRequestTrailers is called when request trailers arrive.
+// Return types.ActionPause if you want to stop sending trailers to the upstream.
 func (ctx *httpContext) OnHttpRequestTrailers(bodySize int) types.Action {
-	proxywasm.LogInfo("********** OnHttpRequestTrailers **********")
-	printRequestProperties()
-
+	if anyPrintBoolTrue(ctx.pluginConfig.OnHttpRequestTrailers) {
+		proxywasm.LogInfo("********** OnHttpRequestTrailers **********")
+		printProperties(ctx.pluginConfig.OnHttpRequestTrailers)
+	}
 	return types.ActionContinue
 }
 
@@ -81,31 +130,155 @@ func (ctx *httpContext) OnHttpRequestTrailers(bodySize int) types.Action {
 // RESPONSE PATH
 // *********************************************
 
+// OnHttpResponseHeaders is called when response headers arrive.
+// Return types.ActionPause if you want to stop sending headers to downstream.
 func (ctx *httpContext) OnHttpResponseHeaders(numHeaders int, endOfStream bool) types.Action {
-	proxywasm.LogInfo("********** OnHttpResponseHeaders **********")
-	printResponseProperties()
-
+	if anyPrintBoolTrue(ctx.pluginConfig.OnHttpResponseHeaders) {
+		proxywasm.LogInfo("********** OnHttpResponseHeaders **********")
+		printProperties(ctx.pluginConfig.OnHttpResponseHeaders)
+	}
 	return types.ActionContinue
 }
 
+// OnHttpResponseBody is called when a response body *frame* arrives.
+// Note that this is potentially called multiple times until we see end_of_stream = true.
+// Return types.ActionPause if you want to buffer the body and stop sending body to the downtream.
+// Even after returning types.ActionPause, this will be called when an unseen frame arrives.
 func (ctx *httpContext) OnHttpResponseBody(bodySize int, endOfStream bool) types.Action {
-	proxywasm.LogInfo("********** OnHttpResponseBody **********")
-	printResponseProperties()
-
+	if anyPrintBoolTrue(ctx.pluginConfig.OnHttpResponseBody) {
+		proxywasm.LogInfo("********** OnHttpResponseBody **********")
+		printProperties(ctx.pluginConfig.OnHttpResponseBody)
+	}
 	return types.ActionContinue
 }
 
+// OnHttpResponseTrailers is called when response trailers arrive.
+// Return types.ActionPause if you want to stop sending trailers to the downstream.
 func (ctx *httpContext) OnHttpResponseTrailers(bodySize int) types.Action {
-	proxywasm.LogInfo("********** OnHttpResponseTrailers **********")
-	printResponseProperties()
-
+	if anyPrintBoolTrue(ctx.pluginConfig.OnHttpResponseTrailers) {
+		proxywasm.LogInfo("********** OnHttpResponseTrailers **********")
+		printProperties(ctx.pluginConfig.OnHttpResponseTrailers)
+	}
 	return types.ActionContinue
 }
 
+// OnHttpStreamDone is called before the host deletes this context.
+// You can retrieve the HTTP request/response information (such as headers, etc.) during this call.
+// This can be used to implement logging features.
 func (ctx *httpContext) OnHttpStreamDone() {
-	proxywasm.LogInfo("********** OnHttpStreamDone **********")
-	printRequestProperties()
-	printResponseProperties()
+	if anyPrintBoolTrue(ctx.pluginConfig.OnHttpStreamDone) {
+		proxywasm.LogInfo("********** OnHttpStreamDone **********")
+		printProperties(ctx.pluginConfig.OnHttpStreamDone)
+	}
+}
+
+// *********************************************
+// HELPER FUNCTIONS
+// *********************************************
+
+// parseConfigData parses the configuration data into the pluginConfig.
+func parseConfigData(data []byte) pluginConfig {
+	type eventNames struct {
+		name   string
+		fields []string
+	}
+	events := []eventNames{
+		{"onPluginStart", []string{"printWasmProperties", "printNodeMetadataProperties", "printNodeProxyConfigProperties", "printXdsProperties", "printUpstreamProperties", "printConnectionProperties", "printResponseProperties", "printRequestProperties"}},
+		{"onHttpRequestHeaders", []string{"printWasmProperties", "printNodeMetadataProperties", "printNodeProxyConfigProperties", "printXdsProperties", "printUpstreamProperties", "printConnectionProperties", "printResponseProperties", "printRequestProperties"}},
+		{"onHttpRequestBody", []string{"printWasmProperties", "printNodeMetadataProperties", "printNodeProxyConfigProperties", "printXdsProperties", "printUpstreamProperties", "printConnectionProperties", "printResponseProperties", "printRequestProperties"}},
+		{"onHttpRequestTrailers", []string{"printWasmProperties", "printNodeMetadataProperties", "printNodeProxyConfigProperties", "printXdsProperties", "printUpstreamProperties", "printConnectionProperties", "printResponseProperties", "printRequestProperties"}},
+		{"onHttpResponseHeaders", []string{"printWasmProperties", "printNodeMetadataProperties", "printNodeProxyConfigProperties", "printXdsProperties", "printUpstreamProperties", "printConnectionProperties", "printResponseProperties", "printRequestProperties"}},
+		{"onHttpResponseBody", []string{"printWasmProperties", "printNodeMetadataProperties", "printNodeProxyConfigProperties", "printXdsProperties", "printUpstreamProperties", "printConnectionProperties", "printResponseProperties", "printRequestProperties"}},
+		{"onHttpResponseTrailers", []string{"printWasmProperties", "printNodeMetadataProperties", "printNodeProxyConfigProperties", "printXdsProperties", "printUpstreamProperties", "printConnectionProperties", "printResponseProperties", "printRequestProperties"}},
+		{"onHttpStreamDone", []string{"printWasmProperties", "printNodeMetadataProperties", "printNodeProxyConfigProperties", "printXdsProperties", "printUpstreamProperties", "printConnectionProperties", "printResponseProperties", "printRequestProperties"}},
+	}
+	jsonData := gjson.ParseBytes(data)
+	config := pluginConfig{}
+
+	for _, event := range events {
+		propPrint := propertiesPrinting{}
+		for _, field := range event.fields {
+			path := event.name + "." + field
+			value := jsonData.Get(path).Bool()
+			switch field {
+			case "printWasmProperties":
+				propPrint.PrintWasmProperties = value
+			case "printNodeMetadataProperties":
+				propPrint.PrintNodeMetadataProperties = value
+			case "printNodeProxyConfigProperties":
+				propPrint.PrintNodeProxyConfigProperties = value
+			case "printXdsProperties":
+				propPrint.PrintXdsProperties = value
+			case "printUpstreamProperties":
+				propPrint.PrintConnectionProperties = value
+			case "printConnectionProperties":
+				propPrint.PrintNodeProxyConfigProperties = value
+			case "printResponseProperties":
+				propPrint.PrintResponseProperties = value
+			case "printRequestProperties":
+				propPrint.PrintRequestProperties = value
+			}
+		}
+		switch event.name {
+		case "onPluginStart":
+			config.OnPluginStart = propPrint
+		case "onHttpRequestHeaders":
+			config.OnHttpRequestHeaders = propPrint
+		case "onHttpRequestBody":
+			config.OnHttpRequestBody = propPrint
+		case "onHttpRequestTrailers":
+			config.OnHttpRequestTrailers = propPrint
+		case "onHttpResponseHeaders":
+			config.OnHttpResponseHeaders = propPrint
+		case "onHttpResponseBody":
+			config.OnHttpResponseBody = propPrint
+		case "onHttpResponseTrailers":
+			config.OnHttpResponseTrailers = propPrint
+		case "onHttpStreamDone":
+			config.OnHttpStreamDone = propPrint
+		}
+	}
+	return config
+}
+
+// anyPrintBoolTrue checks if any of the properties should be printed.
+func anyPrintBoolTrue(p propertiesPrinting) bool {
+	return p.PrintWasmProperties ||
+		p.PrintNodeMetadataProperties ||
+		p.PrintNodeProxyConfigProperties ||
+		p.PrintXdsProperties ||
+		p.PrintUpstreamProperties ||
+		p.PrintConnectionProperties ||
+		p.PrintResponseProperties ||
+		p.PrintRequestProperties
+}
+
+// printProperties logs the properties based on the configuration.
+func printProperties(p propertiesPrinting) {
+	if p.PrintWasmProperties {
+		printWasmProperties()
+	}
+	if p.PrintNodeMetadataProperties {
+		printNodeMetadataProperties()
+	}
+	if p.PrintNodeProxyConfigProperties {
+		printNodeProxyConfigProperties()
+	}
+	if p.PrintXdsProperties {
+		printXdsProperties()
+	}
+	if p.PrintUpstreamProperties {
+		printUpstreamProperties()
+	}
+	if p.PrintConnectionProperties {
+		printConnectionProperties()
+	}
+	if p.PrintResponseProperties {
+		printResponseProperties()
+	}
+	if p.PrintRequestProperties {
+		printRequestProperties()
+	}
 }
 
 func printWasmProperties() {
@@ -117,43 +290,6 @@ func printWasmProperties() {
 	proxywasm.LogInfof(">> GetListenerDirection: %v", properties.GetListenerDirection())
 	proxywasm.LogInfof(">> GetNodeId: %v", properties.GetNodeId())
 	proxywasm.LogInfof(">> GetNodeCluster: %v", properties.GetNodeCluster())
-
-	proxywasm.LogInfof(">> GetNodeMetadata.annotations: %v", properties.GetNodeMetadataAnnotations())
-	proxywasm.LogInfof(">> GetNodeMetadata.appContainers: %v", properties.GetNodeMetadataAppContainers())
-	proxywasm.LogInfof(">> GetNodeMetadata.clusterId: %v", properties.GetNodeMetadataClusterId())
-	proxywasm.LogInfof(">> GetNodeMetadata.envoyPrometheusPort: %v", properties.GetNodeMetadataEnvoyPrometheusPort())
-	proxywasm.LogInfof(">> GetNodeMetadata.envoyStatusPort: %v", properties.GetNodeMetadataEnvoyStatusPort())
-	proxywasm.LogInfof(">> GetNodeMetadata.instanceIps: %v", properties.GetNodeMetadataInstanceIps())
-	proxywasm.LogInfof(">> GetNodeMetadata.interceptionMode: %v", properties.GetNodeMetadataInterceptionMode())
-	proxywasm.LogInfof(">> GetNodeMetadata.istioProxySha: %v", properties.GetNodeMetadataIstioProxySha())
-	proxywasm.LogInfof(">> GetNodeMetadata.istioVersion: %v", properties.GetNodeMetadataIstioVersion())
-	proxywasm.LogInfof(">> GetNodeMetadata.labels: %v", properties.GetNodeMetadataLabels())
-	proxywasm.LogInfof(">> GetNodeMetadata.meshId: %v", properties.GetNodeMetadataMeshId())
-	proxywasm.LogInfof(">> GetNodeMetadata.name: %v", properties.GetNodeMetadataName())
-	proxywasm.LogInfof(">> GetNodeMetadata.namespace: %v", properties.GetNodeMetadataNamespace())
-	proxywasm.LogInfof(">> GetNodeMetadata.nodeName: %v", properties.GetNodeMetadataNodeName())
-	proxywasm.LogInfof(">> GetNodeMetadata.owner: %v", properties.GetNodeMetadataOwner())
-	proxywasm.LogInfof(">> GetNodeMetadata.pilotSan: %v", properties.GetNodeMetadataPilotSan())
-	proxywasm.LogInfof(">> GetNodeMetadata.podPorts: %v", properties.GetNodeMetadataPodPorts())
-	proxywasm.LogInfof(">> GetNodeMetadata.serviceAccount: %v", properties.GetNodeMetadataServiceAccount())
-	proxywasm.LogInfof(">> GetNodeMetadata.workloadName: %v", properties.GetNodeMetadataWorkloadName())
-
-	proxywasm.LogInfof(">> GetNodeMetadata.proxyConfig.binaryPath: %v", properties.GetNodeProxyConfigBinaryPath())
-	proxywasm.LogInfof(">> GetNodeMetadata.proxyConfig.concurrency: %v", properties.GetNodeProxyConfigConcurrency())
-	proxywasm.LogInfof(">> GetNodeMetadata.proxyConfig.configPath: %v", properties.GetNodeProxyConfigConfigPath())
-	proxywasm.LogInfof(">> GetNodeMetadata.proxyConfig.controlPlaneAuthPolicy: %v", properties.GetNodeProxyConfigControlPlaneAuthPolicy())
-	proxywasm.LogInfof(">> GetNodeMetadata.proxyConfig.discoveryAddress: %v", properties.GetNodeProxyConfigDiscoveryAddress())
-	proxywasm.LogInfof(">> GetNodeMetadata.proxyConfig.drainDuration: %v", properties.GetNodeProxyConfigDrainDuration())
-	proxywasm.LogInfof(">> GetNodeMetadata.proxyConfig.extraStatTags: %v", properties.GetNodeProxyConfigExtraStatTags())
-	proxywasm.LogInfof(">> GetNodeMetadata.proxyConfig.holdApplicationUntilProxyStarts: %v", properties.GetNodeProxyConfigHoldApplicationUntilProxyStarts())
-	proxywasm.LogInfof(">> GetNodeMetadata.proxyConfig.proxyAdminPort: %v", properties.GetNodeProxyConfigProxyAdminPort())
-	proxywasm.LogInfof(">> GetNodeMetadata.proxyConfig.proxyStatsMatcher: %+v", properties.GetNodeProxyConfigProxyStatsMatcher())
-	proxywasm.LogInfof(">> GetNodeMetadata.proxyConfig.serviceCluster: %v", properties.GetNodeProxyConfigServiceCluster())
-	proxywasm.LogInfof(">> GetNodeMetadata.proxyConfig.statNameLength: %v", properties.GetNodeProxyConfigStatNameLength())
-	proxywasm.LogInfof(">> GetNodeMetadata.proxyConfig.statusPort: %v", properties.GetNodeProxyConfigStatusPort())
-	proxywasm.LogInfof(">> GetNodeMetadata.proxyConfig.terminationDrainDuration: %v", properties.GetNodeProxyConfigTerminationDrainDuration())
-	proxywasm.LogInfof(">> GetNodeMetadata.proxyConfig.tracing.zipkin.address: %v", properties.GetNodeProxyConfigTracingZipkinAddress())
-
 	proxywasm.LogInfof(">> GetNodeDynamicParams: %v", properties.GetNodeDynamicParams())
 	proxywasm.LogInfof(">> GetNodeLocality: %+v", properties.GetNodeLocality())
 	proxywasm.LogInfof(">> GetNodeUserAgentName: %v", properties.GetNodeUserAgentName())
@@ -168,7 +304,47 @@ func printWasmProperties() {
 	proxywasm.LogInfof(">> GetUpstreamHostMetadata: %+v", properties.GetUpstreamHostMetadata())
 }
 
-func printConfigurationProperties() {
+func printNodeMetadataProperties() {
+	proxywasm.LogInfof(">> GetNodeMetadataAnnotations: %v", properties.GetNodeMetadataAnnotations())
+	proxywasm.LogInfof(">> GetNodeMetadataAppContainers: %v", properties.GetNodeMetadataAppContainers())
+	proxywasm.LogInfof(">> GetNodeMetadataClusterId: %v", properties.GetNodeMetadataClusterId())
+	proxywasm.LogInfof(">> GetNodeMetadataEnvoyPrometheusPort: %v", properties.GetNodeMetadataEnvoyPrometheusPort())
+	proxywasm.LogInfof(">> GetNodeMetadataEnvoyStatusPort: %v", properties.GetNodeMetadataEnvoyStatusPort())
+	proxywasm.LogInfof(">> GetNodeMetadataInstanceIps: %v", properties.GetNodeMetadataInstanceIps())
+	proxywasm.LogInfof(">> GetNodeMetadataInterceptionMode: %v", properties.GetNodeMetadataInterceptionMode())
+	proxywasm.LogInfof(">> GetNodeMetadataIstioProxySha: %v", properties.GetNodeMetadataIstioProxySha())
+	proxywasm.LogInfof(">> GetNodeMetadataIstioVersion: %v", properties.GetNodeMetadataIstioVersion())
+	proxywasm.LogInfof(">> GetNodeMetadataLabels: %v", properties.GetNodeMetadataLabels())
+	proxywasm.LogInfof(">> GetNodeMetadataMeshId: %v", properties.GetNodeMetadataMeshId())
+	proxywasm.LogInfof(">> GetNodeMetadataName: %v", properties.GetNodeMetadataName())
+	proxywasm.LogInfof(">> GetNodeMetadataNamespace: %v", properties.GetNodeMetadataNamespace())
+	proxywasm.LogInfof(">> GetNodeMetadataNodeName: %v", properties.GetNodeMetadataNodeName())
+	proxywasm.LogInfof(">> GetNodeMetadataOwner: %v", properties.GetNodeMetadataOwner())
+	proxywasm.LogInfof(">> GetNodeMetadataPilotSan: %v", properties.GetNodeMetadataPilotSan())
+	proxywasm.LogInfof(">> GetNodeMetadataPodPorts: %v", properties.GetNodeMetadataPodPorts())
+	proxywasm.LogInfof(">> GetNodeMetadataServiceAccount: %v", properties.GetNodeMetadataServiceAccount())
+	proxywasm.LogInfof(">> GetNodeMetadataWorkloadName: %v", properties.GetNodeMetadataWorkloadName())
+}
+
+func printNodeProxyConfigProperties() {
+	proxywasm.LogInfof(">> GetNodeProxyConfigBinaryPath: %v", properties.GetNodeProxyConfigBinaryPath())
+	proxywasm.LogInfof(">> GetNodeProxyConfigConcurrency: %v", properties.GetNodeProxyConfigConcurrency())
+	proxywasm.LogInfof(">> GetNodeProxyConfigConfigPath: %v", properties.GetNodeProxyConfigConfigPath())
+	proxywasm.LogInfof(">> GetNodeProxyConfigControlPlaneAuthPolicy: %v", properties.GetNodeProxyConfigControlPlaneAuthPolicy())
+	proxywasm.LogInfof(">> GetNodeProxyConfigDiscoveryAddress: %v", properties.GetNodeProxyConfigDiscoveryAddress())
+	proxywasm.LogInfof(">> GetNodeProxyConfigDrainDuration: %v", properties.GetNodeProxyConfigDrainDuration())
+	proxywasm.LogInfof(">> GetNodeProxyConfigExtraStatTags: %v", properties.GetNodeProxyConfigExtraStatTags())
+	proxywasm.LogInfof(">> GetNodeProxyConfigHoldApplicationUntilProxyStarts: %v", properties.GetNodeProxyConfigHoldApplicationUntilProxyStarts())
+	proxywasm.LogInfof(">> GetNodeProxyConfigProxyAdminPort: %v", properties.GetNodeProxyConfigProxyAdminPort())
+	proxywasm.LogInfof(">> GetNodeProxyConfigProxyStatsMatcher: %v", properties.GetNodeProxyConfigProxyStatsMatcher())
+	proxywasm.LogInfof(">> GetNodeProxyConfigServiceCluster: %v", properties.GetNodeProxyConfigServiceCluster())
+	proxywasm.LogInfof(">> GetNodeProxyConfigStatNameLength: %v", properties.GetNodeProxyConfigStatNameLength())
+	proxywasm.LogInfof(">> GetNodeProxyConfigStatusPort: %v", properties.GetNodeProxyConfigStatusPort())
+	proxywasm.LogInfof(">> GetNodeProxyConfigTerminationDrainDuration: %v", properties.GetNodeProxyConfigTerminationDrainDuration())
+	proxywasm.LogInfof(">> GetNodeProxyConfigTracingZipkinAddress: %v", properties.GetNodeProxyConfigTracingZipkinAddress())
+}
+
+func printXdsProperties() {
 	proxywasm.LogInfof(">> GetXdsClusterName: %v", properties.GetXdsClusterName())
 	proxywasm.LogInfof(">> GetXdsClusterMetadata: %+v", properties.GetXdsClusterMetadata())
 	proxywasm.LogInfof(">> GetXdsRouteName: %v", properties.GetXdsRouteName())

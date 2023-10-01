@@ -8,8 +8,18 @@ spec:
   imagePullPolicy: Always
   phase: AUTHN
   pluginConfig:
-    test_plugin_config_var: test_plugin_config_value
-  pluginName: demo-print-properties
+    onPluginStart:
+      printWasmProperties: true
+      printNodeMetadataProperties: true
+      printNodeProxyConfigProperties: true
+      printXdsProperties: true
+    onHttpRequestHeaders:
+      printUpstreamProperties: true
+      printRequestProperties: true
+    onHttpResponseHeaders:
+      printConnectionProperties: true
+      printResponseProperties: true
+  pluginName: print-properties
   selector:
     matchLabels:
       istio: ingress

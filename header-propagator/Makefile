@@ -84,6 +84,7 @@ dump-config: ## Dump ingress and sidecar envoy configs
 	istioctl pc dump $$(kubectl get pods -n ns-httpbin -o custom-columns=:metadata.name -l app=httpbin) -n ns-httpbin --output json > httpbin_config_dump-$$(date "+%Y.%m.%d-%H.%M.%S").json
 
 dump-logs: ## Dump ingress and sidecar logs
+	@echo "Dumping logs..."
 	kubectl -n istio-ingress logs $$(kubectl get pods -n istio-ingress -o custom-columns=:metadata.name -l istio=ingress) > ingress_logs-$$(date "+%Y.%m.%d-%H.%M.%S").log
 	kubectl -n ns-a logs $$(kubectl get pods -n ns-a -o custom-columns=:metadata.name -l app=app-a) -c istio-proxy > app_a_logs-$$(date "+%Y.%m.%d-%H.%M.%S").log
 	kubectl -n ns-b logs $$(kubectl get pods -n ns-b -o custom-columns=:metadata.name -l app=app-b) -c istio-proxy > app_b_logs-$$(date "+%Y.%m.%d-%H.%M.%S").log
