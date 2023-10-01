@@ -134,7 +134,7 @@ spec:
 
 ## Makefile Commands
 
-The `makefile` has a self describing help target as well, set as default target.
+The `makefile` has a self describing help target, set as default target.
 
 ```bash
 $ make
