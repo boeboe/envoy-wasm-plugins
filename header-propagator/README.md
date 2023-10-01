@@ -36,7 +36,7 @@ This repository contains a plugin designed to enhance the functionality of Envoy
 
 ```bash
 git clone https://github.com/boeboe/envoy-wasm-plugins.git
-cd envoy-wasm-plugins
+cd envoy-wasm-plugins/header-propagator
 ```
 
 2. Compile the WASM binary:
