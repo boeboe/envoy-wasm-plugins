@@ -44,12 +44,10 @@ clean:## Remove output artifats
 	@echo "Cleaning up..."
 	rm -f *.wasm
 
-compile: $(OUT)
-
 release-docker: compile ## Release docker container on dockerhub
 	@echo "Releasing Docker image..."
-	docker build --platform linux/amd64 --build-arg WASM_BINARY_PATH=$(OUT) -t $(HUB)/$(NAME):$(TAG) .
-	docker push $(HUB)/$(NAME):$(TAG)
+	DOCKER_BUILDKIT=0 docker build --platform linux/amd64 --build-arg WASM_BINARY_PATH=$(OUT) -t $(HUB)/$(NAME):$(TAG) .
+	DOCKER_BUILDKIT=0 docker push $(HUB)/$(NAME):$(TAG)
 
 release-github: compile ## Release wasm binary on github
 	@echo "Releasing to GitHub..."
