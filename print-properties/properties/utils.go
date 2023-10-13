@@ -151,7 +151,7 @@ func deserializeToTimestamp(data []byte) time.Time {
 
 // deserialize a protobuf encoded string slice
 func deserializeProtobufToStringSlice(data []byte) []string {
-	var ret []string
+	ret := make([]string, 0)
 	i := 0
 	for i < len(data) {
 		i++

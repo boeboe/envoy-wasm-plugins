@@ -295,7 +295,7 @@ func printWasmProperties() {
 	proxywasm.LogInfof(">> GetNodeUserAgentName: %v", properties.GetNodeUserAgentName())
 	proxywasm.LogInfof(">> GetNodeUserAgentVersion: %v", properties.GetNodeUserAgentVersion())
 	proxywasm.LogInfof(">> GetNodeUserAgentBuildVersion: %v", properties.GetNodeUserAgentBuildVersion())
-	proxywasm.LogInfof(">> GetNodeExtensions: %v", properties.GetNodeExtensions())
+	proxywasm.LogInfof(">> GetNodeExtensions: %+v", properties.GetNodeExtensions())
 	proxywasm.LogInfof(">> GetNodeClientFeatures: %v", properties.GetNodeClientFeatures())
 	proxywasm.LogInfof(">> GetNodeListeningAddresses: %v", properties.GetNodeListeningAddresses())
 	proxywasm.LogInfof(">> GetClusterMetadata: %+v", properties.GetClusterMetadata())
